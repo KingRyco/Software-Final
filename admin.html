@@ -7,6 +7,8 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/feather-icons"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
     * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
@@ -172,7 +174,7 @@
     <h1 class="text-5xl font-black mb-2">🎬 ReelDeal Cinema - Admin Panel</h1>
     <p class="text-lg opacity-90">Comprehensive analytics and management</p>
     <div class="sync-notice mt-4">
-        ✅ All changes sync automatically with the home screen
+        ✅ All changes sync automatically with SQL database and home screen
     </div>
 </header>
 
@@ -308,34 +310,6 @@
     </div>
 </section>
 
-<!-- Manage Movies Section -->
-<section id="manageMovies" class="hidden space-y-6">
-    <h2 class="text-3xl font-bold text-white mb-6">🎥 Manage Movies</h2>
-    
-    <div class="glass p-6 rounded-xl shadow-lg mb-6">
-        <h3 class="text-xl font-bold mb-4 text-gray-900">Add New Movie</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input type="text" id="newMovieTitle" placeholder="Movie Title *" class="p-3 rounded-xl border-2 border-gray-300">
-            <input type="text" id="newMovieGenre" placeholder="Genre *" class="p-3 rounded-xl border-2 border-gray-300">
-            <input type="number" id="newMovieRating" placeholder="Rating (0-5) *" step="0.1" min="0" max="5" class="p-3 rounded-xl border-2 border-gray-300">
-            <input type="number" id="newMoviePrice" placeholder="Ticket Price *" step="0.01" min="0" class="p-3 rounded-xl border-2 border-gray-300">
-            <input type="text" id="newMovieImage" placeholder="Image URL *" class="p-3 rounded-xl border-2 border-gray-300 md:col-span-2">
-            <textarea id="newMovieSynopsis" placeholder="Synopsis" class="p-3 rounded-xl border-2 border-gray-300 md:col-span-2" rows="2"></textarea>
-            <input type="text" id="newMovieCast" placeholder="Cast (comma separated)" class="p-3 rounded-xl border-2 border-gray-300">
-            <input type="text" id="newMovieRuntime" placeholder="Runtime (e.g., 2h 30m)" class="p-3 rounded-xl border-2 border-gray-300">
-        </div>
-        <button onclick="addMovie()" class="btn-success px-6 py-3 rounded-xl mt-4">Add Movie</button>
-    </div>
-    
-    <div class="glass p-6 rounded-xl shadow-lg">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-xl font-bold text-gray-900">Current Movies</h3>
-            <input type="text" id="searchMovies" placeholder="Search movies..." class="p-2 rounded-lg border-2 border-gray-300 w-64" oninput="renderMoviesList()">
-        </div>
-        <div id="moviesListContainer" class="space-y-4"></div>
-    </div>
-</section>
-
 <!-- Manage Theaters Section -->
 <section id="manageTheaters" class="hidden space-y-6">
     <h2 class="text-3xl font-bold text-white mb-6">🏪 Manage Theaters & Showtimes</h2>
@@ -395,7 +369,7 @@
             <input type="text" id="newAdminName" placeholder="Full Name *" class="p-3 rounded-xl border-2 border-gray-300">
             <input type="email" id="newAdminEmail" placeholder="Email *" class="p-3 rounded-xl border-2 border-gray-300">
             <input type="password" id="newAdminPassword" placeholder="Password *" class="p-3 rounded-xl border-2 border-gray-300">
-            <input type="text" id="newAdminPhone" placeholder="Phone (optional)" class="p-3 rounded-xl border-2 border-gray-300">
+            <input type="text" id="newAdminPhone" placeholder="Phone (555-123-4567)" class="p-3 rounded-xl border-2 border-gray-300">
         </div>
         <button onclick="addAdmin()" class="btn-success px-6 py-3 rounded-xl mt-4">Create Admin Account</button>
     </div>
@@ -419,14 +393,14 @@
             <input type="text" id="newUserName" placeholder="Full Name *" class="p-3 rounded-xl border-2 border-gray-300">
             <input type="email" id="newUserEmail" placeholder="Email *" class="p-3 rounded-xl border-2 border-gray-300">
             <input type="password" id="newUserPassword" placeholder="Password *" class="p-3 rounded-xl border-2 border-gray-300">
-            <input type="text" id="newUserPhone" placeholder="Phone (optional)" class="p-3 rounded-xl border-2 border-gray-300">
+            <input type="text" id="newUserPhone" placeholder="Phone (555-123-4567)" class="p-3 rounded-xl border-2 border-gray-300">
         </div>
         <button onclick="addUser()" class="btn-success px-6 py-3 rounded-xl mt-4">Add User</button>
     </div>
     
     <div class="glass p-6 rounded-xl shadow-lg">
         <div class="flex justify-between items-center mb-4">
-            <h3 class="text-xl font-bold text-gray-900">Registered Users List</h3>
+            <h3 class="text-xl font-bold text-gray-900">Registered Users List (<span id="userCount">0</span>)</h3>
             <input type="text" id="searchUsers" placeholder="Search users..." class="p-2 rounded-lg border-2 border-gray-300 w-64" oninput="renderUsersList()">
         </div>
         <div id="usersListContainer" class="space-y-4"></div>
@@ -435,23 +409,20 @@
 
 </main>
 
-<!-- Edit Movie Modal -->
-<div id="editMovieModal" class="modal">
+<!-- Edit User Modal -->
+<div id="editUserModal" class="modal">
     <div class="modal-content">
-        <h2 class="text-2xl font-bold mb-4">Edit Movie</h2>
+        <h2 class="text-2xl font-bold mb-4">Edit User</h2>
         <div class="space-y-4">
-            <input type="hidden" id="editMovieId">
-            <input type="text" id="editMovieTitle" placeholder="Movie Title *" class="w-full p-3 rounded-xl border-2 border-gray-300">
-            <input type="text" id="editMovieGenre" placeholder="Genre *" class="w-full p-3 rounded-xl border-2 border-gray-300">
-            <input type="number" id="editMovieRating" placeholder="Rating *" step="0.1" min="0" max="5" class="w-full p-3 rounded-xl border-2 border-gray-300">
-            <input type="number" id="editMoviePrice" placeholder="Price *" step="0.01" min="0" class="w-full p-3 rounded-xl border-2 border-gray-300">
-            <input type="text" id="editMovieImage" placeholder="Image URL *" class="w-full p-3 rounded-xl border-2 border-gray-300">
-            <textarea id="editMovieSynopsis" placeholder="Synopsis" class="w-full p-3 rounded-xl border-2 border-gray-300" rows="2"></textarea>
-            <input type="text" id="editMovieCast" placeholder="Cast" class="w-full p-3 rounded-xl border-2 border-gray-300">
-            <input type="text" id="editMovieRuntime" placeholder="Runtime" class="w-full p-3 rounded-xl border-2 border-gray-300">
+            <input type="hidden" id="editUserId">
+            <input type="text" id="editUserName" placeholder="Full Name *" class="w-full p-3 rounded-xl border-2 border-gray-300">
+            <input type="email" id="editUserEmail" placeholder="Email *" class="w-full p-3 rounded-xl border-2 border-gray-300">
+            <input type="password" id="editUserPassword" placeholder="Password (leave blank to keep current)" class="w-full p-3 rounded-xl border-2 border-gray-300">
+            <input type="text" id="editUserPhone" placeholder="Phone" class="w-full p-3 rounded-xl border-2 border-gray-300">
+            <input type="text" id="editUserSignupDate" disabled class="w-full p-3 rounded-xl border-2 border-gray-300 bg-gray-100">
             <div class="flex gap-4 mt-4">
-                <button onclick="saveMovieEdit()" class="btn-success px-6 py-3 rounded-xl flex-1">Save</button>
-                <button onclick="closeEditModal()" class="btn-danger px-6 py-3 rounded-xl flex-1">Cancel</button>
+                <button onclick="saveUserEdit()" class="btn-success px-6 py-3 rounded-xl flex-1">Save</button>
+                <button onclick="closeUserModal()" class="btn-danger px-6 py-3 rounded-xl flex-1">Cancel</button>
             </div>
         </div>
     </div>
@@ -488,27 +459,260 @@
     </div>
 </div>
 
-<!-- Edit User Modal -->
-<div id="editUserModal" class="modal">
-    <div class="modal-content">
-        <h2 class="text-2xl font-bold mb-4">Edit User</h2>
-        <div class="space-y-4">
-            <input type="hidden" id="editUserId">
-            <input type="text" id="editUserName" placeholder="Full Name *" class="w-full p-3 rounded-xl border-2 border-gray-300">
-            <input type="email" id="editUserEmail" placeholder="Email *" class="w-full p-3 rounded-xl border-2 border-gray-300">
-            <input type="password" id="editUserPassword" placeholder="Password (leave blank to keep current)" class="w-full p-3 rounded-xl border-2 border-gray-300">
-            <input type="text" id="editUserPhone" placeholder="Phone (optional)" class="w-full p-3 rounded-xl border-2 border-gray-300">
-            <input type="text" id="editUserSignupDate" disabled class="w-full p-3 rounded-xl border-2 border-gray-300 bg-gray-100">
-            <div class="flex gap-4 mt-4">
-                <button onclick="saveUserEdit()" class="btn-success px-6 py-3 rounded-xl flex-1">Save</button>
-                <button onclick="closeUserModal()" class="btn-danger px-6 py-3 rounded-xl flex-1">Cancel</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script>
 feather.replace();
+
+// =============================================
+// SQL DATABASE IMPLEMENTATION
+// =============================================
+
+let db = null;
+
+// Initialize SQL.js database
+async function initDatabase() {
+    try {
+        const SQL = await initSqlJs({
+            locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
+        });
+
+        const savedDb = localStorage.getItem('reeldeal_database');
+        if (savedDb) {
+            const uint8Array = new Uint8Array(JSON.parse(savedDb));
+            db = new SQL.Database(uint8Array);
+            console.log('Admin: Database loaded from storage');
+        } else {
+            db = new SQL.Database();
+            console.log('Admin: No database found - users need to register');
+        }
+        return true;
+    } catch (error) {
+        console.error('Admin: Database initialization error:', error);
+        alert('Failed to load database. Please refresh the page.');
+        return false;
+    }
+}
+
+// Save database to localStorage
+function saveDatabase() {
+    try {
+        const data = db.export();
+        const buffer = Array.from(data);
+        localStorage.setItem('reeldeal_database', JSON.stringify(buffer));
+        return true;
+    } catch (error) {
+        console.error('Save database error:', error);
+        return false;
+    }
+}
+
+// Get all users from SQL database
+function getAllUsersFromSQL() {
+    try {
+        const stmt = db.prepare('SELECT * FROM users ORDER BY created_at DESC');
+        const users = [];
+        while (stmt.step()) {
+            const row = stmt.getAsObject();
+            users.push({
+                id: row.user_id,
+                userId: row.user_id,
+                name: row.name,
+                email: row.email,
+                phone: row.phone || '',
+                address: row.address || '',
+                passwordHash: row.password_hash,
+                accountType: row.account_type,
+                signupDate: row.signup_date
+            });
+        }
+        stmt.free();
+        return users;
+    } catch (error) {
+        console.error('Get all users error:', error);
+        return [];
+    }
+}
+
+// Get regular users only (account_type = 'user')
+function getRegularUsers() {
+    try {
+        const stmt = db.prepare("SELECT * FROM users WHERE account_type = 'user' ORDER BY created_at DESC");
+        const users = [];
+        while (stmt.step()) {
+            const row = stmt.getAsObject();
+            users.push({
+                id: row.user_id,
+                userId: row.user_id,
+                name: row.name,
+                email: row.email,
+                phone: row.phone || '',
+                address: row.address || '',
+                passwordHash: row.password_hash,
+                accountType: row.account_type,
+                signupDate: row.signup_date
+            });
+        }
+        stmt.free();
+        return users;
+    } catch (error) {
+        console.error('Get regular users error:', error);
+        return [];
+    }
+}
+
+// Get admin users only (account_type = 'admin')
+function getAdminUsers() {
+    try {
+        const stmt = db.prepare("SELECT * FROM users WHERE account_type = 'admin' ORDER BY created_at DESC");
+        const admins = [];
+        while (stmt.step()) {
+            const row = stmt.getAsObject();
+            admins.push({
+                id: row.user_id,
+                userId: row.user_id,
+                name: row.name,
+                email: row.email,
+                phone: row.phone || '',
+                address: row.address || '',
+                passwordHash: row.password_hash,
+                accountType: row.account_type,
+                signupDate: row.signup_date
+            });
+        }
+        stmt.free();
+        return admins;
+    } catch (error) {
+        console.error('Get admin users error:', error);
+        return [];
+    }
+}
+
+// Update user in SQL database
+function updateUserInSQL(userId, updates) {
+    try {
+        const fields = [];
+        const values = [];
+        
+        if (updates.name !== undefined) {
+            fields.push('name = ?');
+            values.push(updates.name);
+        }
+        if (updates.email !== undefined) {
+            fields.push('email = ?');
+            values.push(updates.email);
+        }
+        if (updates.phone !== undefined) {
+            fields.push('phone = ?');
+            values.push(updates.phone);
+        }
+        if (updates.address !== undefined) {
+            fields.push('address = ?');
+            values.push(updates.address);
+        }
+        if (updates.accountType !== undefined) {
+            fields.push('account_type = ?');
+            values.push(updates.accountType);
+        }
+        if (updates.passwordHash !== undefined) {
+            fields.push('password_hash = ?');
+            values.push(updates.passwordHash);
+        }
+        
+        if (fields.length === 0) return false;
+        
+        values.push(userId);
+        const sql = `UPDATE users SET ${fields.join(', ')} WHERE user_id = ?`;
+        db.run(sql, values);
+        saveDatabase();
+        
+        // Update localStorage backup
+        exportUsersToLocalStorage();
+        return true;
+    } catch (error) {
+        console.error('Update user error:', error);
+        return false;
+    }
+}
+
+// Delete user from SQL database
+function deleteUserFromSQL(userId) {
+    try {
+        db.run('DELETE FROM users WHERE user_id = ?', [userId]);
+        db.run('DELETE FROM purchase_history WHERE user_id = ?', [userId]);
+        db.run('DELETE FROM reviews WHERE user_id = ?', [userId]);
+        saveDatabase();
+        
+        // Update localStorage backup
+        exportUsersToLocalStorage();
+        return true;
+    } catch (error) {
+        console.error('Delete user error:', error);
+        return false;
+    }
+}
+
+// Insert new user into SQL database
+function insertUserIntoSQL(userData) {
+    try {
+        const stmt = db.prepare(`
+            INSERT INTO users (user_id, name, email, phone, address, password_hash, account_type, signup_date)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        stmt.run([
+            userData.userId,
+            userData.name,
+            userData.email,
+            userData.phone || '',
+            userData.address || '',
+            userData.passwordHash,
+            userData.accountType,
+            userData.signupDate
+        ]);
+        stmt.free();
+        saveDatabase();
+        
+        // Update localStorage backup
+        exportUsersToLocalStorage();
+        return true;
+    } catch (error) {
+        console.error('Insert user error:', error);
+        return false;
+    }
+}
+
+// Check if email exists in SQL database
+function emailExistsInSQL(email) {
+    try {
+        const stmt = db.prepare('SELECT email FROM users WHERE email = ?');
+        stmt.bind([email.toLowerCase()]);
+        const result = stmt.step();
+        stmt.free();
+        return result;
+    } catch (error) {
+        console.error('Email check error:', error);
+        return false;
+    }
+}
+
+// Export users to localStorage for backward compatibility
+function exportUsersToLocalStorage() {
+    try {
+        const users = getAllUsersFromSQL();
+        localStorage.setItem('registeredUsers', JSON.stringify(users));
+        return users;
+    } catch (error) {
+        console.error('Export to localStorage error:', error);
+        return [];
+    }
+}
+
+// Utility functions
+function hashPassword(password) {
+    return CryptoJS.SHA256(password).toString();
+}
+
+function generateUserId() {
+    return 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
 
 // SHARED localStorage keys with home screen
 const STORAGE_KEYS = {
@@ -516,7 +720,7 @@ const STORAGE_KEYS = {
     THEATERS: 'homeScreenTheaters',
     SHOWTIMES: 'homeScreenShowtimes',
     TICKETS: 'ticketHistory',
-    USERS: 'registeredUsers'  // New key for users
+    USERS: 'registeredUsers'
 };
 
 // Movie data with prices (for backwards compatibility)
@@ -554,13 +758,10 @@ const defaultShowtimes = [
     {name:"Evening", time:"6:00 PM"}
 ];
 
-const defaultUsers = [];  // No default users, but can add for testing if needed
-
 // Load shared data
 let adminMovies = JSON.parse(localStorage.getItem(STORAGE_KEYS.MOVIES) || 'null') || defaultMovies;
 let adminTheaters = JSON.parse(localStorage.getItem(STORAGE_KEYS.THEATERS) || 'null') || defaultTheaters;
 let adminShowtimes = JSON.parse(localStorage.getItem(STORAGE_KEYS.SHOWTIMES) || 'null') || defaultShowtimes;
-let adminUsers = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || 'null') || defaultUsers;
 
 // Save initial data if not exists
 if (!localStorage.getItem(STORAGE_KEYS.MOVIES)) {
@@ -571,9 +772,6 @@ if (!localStorage.getItem(STORAGE_KEYS.THEATERS)) {
 }
 if (!localStorage.getItem(STORAGE_KEYS.SHOWTIMES)) {
     localStorage.setItem(STORAGE_KEYS.SHOWTIMES, JSON.stringify(adminShowtimes));
-}
-if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
-    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(adminUsers));
 }
 
 // Pagination
@@ -595,12 +793,15 @@ function showSection(id){
     else if(id === 'movieRevenue') renderMovieRevenue();
     else if(id === 'theaterAnalytics') renderTheaterAnalytics();
     else if(id === 'timeAnalytics') renderTimeAnalytics();
-    else if(id === 'manageMovies') renderMoviesList();
     else if(id === 'manageTheaters') {
         renderTheatersList();
         renderShowtimesList();
     }
-    else if(id === 'manageUsers') {
+    else if(id === 'manageAdmins') {
+        populatePromoteSelect();
+        renderAdminsList();
+    }
+    else if(id === 'registeredUsers') {
         renderUsersList();
     }
 }
@@ -1148,178 +1349,6 @@ function renderTimeAnalytics() {
     container.appendChild(table);
 }
 
-// Movie Management
-function addMovie() {
-    const title = document.getElementById('newMovieTitle').value.trim();
-    const genre = document.getElementById('newMovieGenre').value.trim();
-    const rating = parseFloat(document.getElementById('newMovieRating').value);
-    const price = parseFloat(document.getElementById('newMoviePrice').value);
-    const image = document.getElementById('newMovieImage').value.trim();
-    const synopsis = document.getElementById('newMovieSynopsis').value.trim();
-    const cast = document.getElementById('newMovieCast').value.trim();
-    const runtime = document.getElementById('newMovieRuntime').value.trim();
-    
-    // Validation
-    if (!title || !genre || !rating || !price || !image) {
-        alert('Please fill in all required fields (marked with *)');
-        return;
-    }
-    
-    if (rating < 0 || rating > 5) {
-        alert('Rating must be between 0 and 5');
-        return;
-    }
-    
-    if (price <= 0) {
-        alert('Price must be greater than 0');
-        return;
-    }
-    
-    // Check for duplicate movie title
-    if (adminMovies.some(m => m.title.toLowerCase() === title.toLowerCase())) {
-        alert('A movie with this title already exists!');
-        return;
-    }
-    
-    const newMovie = {
-        id: Date.now(),
-        title,
-        genre,
-        rating,
-        price,
-        image,
-        synopsis: synopsis || 'No synopsis available',
-        cast: cast || 'Cast information unavailable',
-        runtime: runtime || 'Runtime not specified'
-    };
-    
-    adminMovies.push(newMovie);
-    localStorage.setItem(STORAGE_KEYS.MOVIES, JSON.stringify(adminMovies));
-    
-    // Clear form
-    document.getElementById('newMovieTitle').value = '';
-    document.getElementById('newMovieGenre').value = '';
-    document.getElementById('newMovieRating').value = '';
-    document.getElementById('newMoviePrice').value = '';
-    document.getElementById('newMovieImage').value = '';
-    document.getElementById('newMovieSynopsis').value = '';
-    document.getElementById('newMovieCast').value = '';
-    document.getElementById('newMovieRuntime').value = '';
-    
-    alert('Movie added successfully! It will now appear on the home screen.');
-    renderMoviesList();
-}
-
-function renderMoviesList() {
-    const container = document.getElementById('moviesListContainer');
-    const searchTerm = document.getElementById('searchMovies')?.value.toLowerCase() || '';
-    
-    const filteredMovies = adminMovies.filter(m => 
-        m.title.toLowerCase().includes(searchTerm) ||
-        m.genre.toLowerCase().includes(searchTerm)
-    );
-    
-    if (filteredMovies.length === 0) {
-        container.innerHTML = '<p class="text-gray-500">No movies found.</p>';
-        return;
-    }
-    
-    container.innerHTML = filteredMovies.map((movie, idx) => {
-        const actualIdx = adminMovies.findIndex(m => m.id === movie.id);
-        return `
-        <div class="flex justify-between items-center p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition">
-            <div class="flex items-center gap-4">
-                <img src="${movie.image}" alt="${movie.title}" class="w-20 h-28 object-cover rounded-lg shadow-md" onerror="this.src='https://via.placeholder.com/80x112?text=No+Image'">
-                <div>
-                    <h4 class="font-bold text-lg">${movie.title}</h4>
-                    <p class="text-sm text-gray-600">${movie.genre} • ⭐ ${movie.rating}</p>
-                    <p class="text-sm font-bold text-green-600">${movie.price.toFixed(2)}</p>
-                </div>
-            </div>
-            <div class="flex gap-2">
-                <button onclick="editMovie(${actualIdx})" class="btn-primary px-4 py-2 rounded-xl text-sm">✏️ Edit</button>
-                <button onclick="deleteMovie(${actualIdx})" class="btn-danger px-4 py-2 rounded-xl text-sm">🗑️ Delete</button>
-            </div>
-        </div>
-    `}).join('');
-}
-
-function editMovie(idx) {
-    const movie = adminMovies[idx];
-    document.getElementById('editMovieId').value = idx;
-    document.getElementById('editMovieTitle').value = movie.title;
-    document.getElementById('editMovieGenre').value = movie.genre;
-    document.getElementById('editMovieRating').value = movie.rating;
-    document.getElementById('editMoviePrice').value = movie.price;
-    document.getElementById('editMovieImage').value = movie.image;
-    document.getElementById('editMovieSynopsis').value = movie.synopsis || '';
-    document.getElementById('editMovieCast').value = movie.cast || '';
-    document.getElementById('editMovieRuntime').value = movie.runtime || '';
-    
-    document.getElementById('editMovieModal').classList.add('active');
-}
-
-function saveMovieEdit() {
-    const idx = parseInt(document.getElementById('editMovieId').value);
-    const title = document.getElementById('editMovieTitle').value.trim();
-    const genre = document.getElementById('editMovieGenre').value.trim();
-    const rating = parseFloat(document.getElementById('editMovieRating').value);
-    const price = parseFloat(document.getElementById('editMoviePrice').value);
-    const image = document.getElementById('editMovieImage').value.trim();
-    const synopsis = document.getElementById('editMovieSynopsis').value.trim();
-    const cast = document.getElementById('editMovieCast').value.trim();
-    const runtime = document.getElementById('editMovieRuntime').value.trim();
-    
-    // Validation
-    if (!title || !genre || !rating || !price || !image) {
-        alert('Please fill in all required fields');
-        return;
-    }
-    
-    if (rating < 0 || rating > 5) {
-        alert('Rating must be between 0 and 5');
-        return;
-    }
-    
-    if (price <= 0) {
-        alert('Price must be greater than 0');
-        return;
-    }
-    
-    adminMovies[idx] = {
-        ...adminMovies[idx],
-        title,
-        genre,
-        rating,
-        price,
-        image,
-        synopsis: synopsis || 'No synopsis available',
-        cast: cast || 'Cast information unavailable',
-        runtime: runtime || 'Runtime not specified'
-    };
-    
-    localStorage.setItem(STORAGE_KEYS.MOVIES, JSON.stringify(adminMovies));
-    
-    closeEditModal();
-    alert('Movie updated successfully! Changes will appear on the home screen.');
-    renderMoviesList();
-}
-
-function closeEditModal() {
-    document.getElementById('editMovieModal').classList.remove('active');
-}
-
-function deleteMovie(idx) {
-    const movie = adminMovies[idx];
-    if (!confirm(`Are you sure you want to delete "${movie.title}"? This action cannot be undone.`)) return;
-    
-    adminMovies.splice(idx, 1);
-    localStorage.setItem(STORAGE_KEYS.MOVIES, JSON.stringify(adminMovies));
-    
-    alert('Movie deleted successfully! It will be removed from the home screen.');
-    renderMoviesList();
-}
-
 // Theater Management
 function addTheater() {
     const name = document.getElementById('newTheaterName').value.trim();
@@ -1515,15 +1544,55 @@ function deleteShowtime(idx) {
     renderShowtimesList();
 }
 
-// User Management
-function addUser() {
-    const name = document.getElementById('newUserName').value.trim();
-    const email = document.getElementById('newUserEmail').value.trim();
-    const password = document.getElementById('newUserPassword').value.trim();
-    const phone = document.getElementById('newUserPhone').value.trim();
+// =============================================
+// USER MANAGEMENT
+// =============================================
+
+function populatePromoteSelect() {
+    const select = document.getElementById('promoteUserSelect');
+    const regularUsers = getRegularUsers();
+    
+    select.innerHTML = '<option value="">Select a user to promote...</option>' +
+        regularUsers.map(u => `<option value="${u.userId}">${u.name} (${u.email})</option>`).join('');
+}
+
+function promoteToAdmin() {
+    const select = document.getElementById('promoteUserSelect');
+    const userId = select.value;
+    
+    if (!userId) {
+        alert('Please select a user to promote');
+        return;
+    }
+    
+    const user = getRegularUsers().find(u => u.userId === userId);
+    if (!user) {
+        alert('User not found');
+        return;
+    }
+    
+    if (!confirm(`Are you sure you want to promote "${user.name}" to admin status?`)) return;
+    
+    // Update in SQL database
+    const updated = updateUserInSQL(userId, { accountType: 'admin' });
+    
+    if (updated) {
+        alert(`${user.name} has been promoted to admin!`);
+        populatePromoteSelect();
+        renderAdminsList();
+    } else {
+        alert('Failed to promote user. Please try again.');
+    }
+}
+
+function addAdmin() {
+    const name = document.getElementById('newAdminName').value.trim();
+    const email = document.getElementById('newAdminEmail').value.trim().toLowerCase();
+    const password = document.getElementById('newAdminPassword').value;
+    const phone = document.getElementById('newAdminPhone').value.trim();
     
     if (!name || !email || !password) {
-        alert('Please fill in all required fields');
+        alert('Please fill in all required fields (Name, Email, Password)');
         return;
     }
     
@@ -1533,88 +1602,227 @@ function addUser() {
         return;
     }
     
-    // Check for duplicate email
-    if (adminUsers.some(u => u.email.toLowerCase() === email.toLowerCase())) {
-        alert('A user with this email already exists!');
+    if (password.length < 6) {
+        alert('Password must be at least 6 characters');
         return;
     }
     
-    const newUser = {
-        id: Date.now(),
-        name,
-        email,
-        password,  // Note: In real apps, hash passwords! This is for demo only.
-        phone: phone || 'N/A',
+    // Check for duplicate email in SQL database
+    if (emailExistsInSQL(email)) {
+        alert('An account with this email already exists!');
+        return;
+    }
+    
+    const userId = generateUserId();
+    const newAdmin = {
+        userId: userId,
+        name: name,
+        email: email,
+        phone: phone || '',
+        address: '',
+        passwordHash: hashPassword(password),
+        accountType: 'admin',
         signupDate: new Date().toISOString()
     };
     
-    adminUsers.push(newUser);
-    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(adminUsers));
+    // Insert into SQL database
+    const inserted = insertUserIntoSQL(newAdmin);
     
-    // Clear form
-    document.getElementById('newUserName').value = '';
-    document.getElementById('newUserEmail').value = '';
-    document.getElementById('newUserPassword').value = '';
-    document.getElementById('newUserPhone').value = '';
+    if (inserted) {
+        // Clear form
+        document.getElementById('newAdminName').value = '';
+        document.getElementById('newAdminEmail').value = '';
+        document.getElementById('newAdminPassword').value = '';
+        document.getElementById('newAdminPhone').value = '';
+        
+        alert('Admin account created successfully!');
+        renderAdminsList();
+    } else {
+        alert('Failed to create admin account. Please try again.');
+    }
+}
+
+function renderAdminsList() {
+    const container = document.getElementById('adminsListContainer');
+    const searchTerm = document.getElementById('searchAdmins')?.value.toLowerCase() || '';
     
-    alert('User added successfully!');
-    renderUsersList();
+    const adminUsers = getAdminUsers();
+    
+    const filteredAdmins = adminUsers.filter(u => 
+        u.name.toLowerCase().includes(searchTerm) ||
+        u.email.toLowerCase().includes(searchTerm) ||
+        (u.phone && u.phone.toLowerCase().includes(searchTerm))
+    );
+    
+    // Update admin count
+    document.getElementById('adminCount').textContent = adminUsers.length;
+    
+    if (filteredAdmins.length === 0) {
+        container.innerHTML = '<p class="text-gray-500">No admins found.</p>';
+        return;
+    }
+    
+    container.innerHTML = filteredAdmins.map(admin => `
+        <div class="flex justify-between items-center p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl hover:from-purple-100 hover:to-blue-100 transition border-l-4 border-purple-500">
+            <div>
+                <h4 class="font-bold text-lg">👑 ${admin.name}</h4>
+                <p class="text-sm text-gray-600">Email: ${admin.email}</p>
+                <p class="text-sm text-gray-600">Phone: ${admin.phone || 'Not provided'}</p>
+                <p class="text-sm text-gray-600">Admin since: ${new Date(admin.signupDate).toLocaleDateString()}</p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="demoteFromAdmin('${admin.userId}')" class="btn-danger px-4 py-2 rounded-xl text-sm">⬇️ Demote to User</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function demoteFromAdmin(userId) {
+    const admin = getAdminUsers().find(u => u.userId === userId);
+    if (!admin) {
+        alert('Admin not found');
+        return;
+    }
+    
+    if (!confirm(`Are you sure you want to demote "${admin.name}" from admin to regular user?`)) return;
+    
+    // Update in SQL database
+    const updated = updateUserInSQL(userId, { accountType: 'user' });
+    
+    if (updated) {
+        alert(`${admin.name} has been demoted to regular user.`);
+        populatePromoteSelect();
+        renderAdminsList();
+    } else {
+        alert('Failed to demote admin. Please try again.');
+    }
+}
+
+// =============================================
+// REGISTERED USERS MANAGEMENT
+// =============================================
+
+function addUser() {
+    const name = document.getElementById('newUserName').value.trim();
+    const email = document.getElementById('newUserEmail').value.trim().toLowerCase();
+    const password = document.getElementById('newUserPassword').value;
+    const phone = document.getElementById('newUserPhone').value.trim();
+    
+    if (!name || !email || !password) {
+        alert('Please fill in all required fields (Name, Email, Password)');
+        return;
+    }
+    
+    // Basic email validation
+    if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+        alert('Please enter a valid email address');
+        return;
+    }
+    
+    if (password.length < 6) {
+        alert('Password must be at least 6 characters');
+        return;
+    }
+    
+    // Check for duplicate email in SQL database
+    if (emailExistsInSQL(email)) {
+        alert('An account with this email already exists!');
+        return;
+    }
+    
+    const userId = generateUserId();
+    const newUser = {
+        userId: userId,
+        name: name,
+        email: email,
+        phone: phone || '',
+        address: '',
+        passwordHash: hashPassword(password),
+        accountType: 'user',
+        signupDate: new Date().toISOString()
+    };
+    
+    // Insert into SQL database
+    const inserted = insertUserIntoSQL(newUser);
+    
+    if (inserted) {
+        // Clear form
+        document.getElementById('newUserName').value = '';
+        document.getElementById('newUserEmail').value = '';
+        document.getElementById('newUserPassword').value = '';
+        document.getElementById('newUserPhone').value = '';
+        
+        alert('User added successfully!');
+        renderUsersList();
+    } else {
+        alert('Failed to add user. Please try again.');
+    }
 }
 
 function renderUsersList() {
     const container = document.getElementById('usersListContainer');
     const searchTerm = document.getElementById('searchUsers')?.value.toLowerCase() || '';
     
-    const filteredUsers = adminUsers.filter(u => 
+    const regularUsers = getRegularUsers();
+    
+    const filteredUsers = regularUsers.filter(u => 
         u.name.toLowerCase().includes(searchTerm) ||
         u.email.toLowerCase().includes(searchTerm) ||
-        u.phone.toLowerCase().includes(searchTerm)
+        (u.phone && u.phone.toLowerCase().includes(searchTerm))
     );
+    
+    // Update user count
+    document.getElementById('userCount').textContent = regularUsers.length;
     
     if (filteredUsers.length === 0) {
         container.innerHTML = '<p class="text-gray-500">No users found.</p>';
         return;
     }
     
-    container.innerHTML = filteredUsers.map((user, idx) => {
-        const actualIdx = adminUsers.findIndex(u => u.id === user.id);
-        return `
+    container.innerHTML = filteredUsers.map(user => `
         <div class="flex justify-between items-center p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition">
             <div>
-                <h4 class="font-bold text-lg">${user.name}</h4>
+                <h4 class="font-bold text-lg">👤 ${user.name}</h4>
                 <p class="text-sm text-gray-600">Email: ${user.email}</p>
-                <p class="text-sm text-gray-600">Phone: ${user.phone}</p>
+                <p class="text-sm text-gray-600">Phone: ${user.phone || 'Not provided'}</p>
                 <p class="text-sm text-gray-600">Signed up: ${new Date(user.signupDate).toLocaleDateString()}</p>
             </div>
             <div class="flex gap-2">
-                <button onclick="editUser(${actualIdx})" class="btn-primary px-4 py-2 rounded-xl text-sm">✏️ Edit</button>
-                <button onclick="deleteUser(${actualIdx})" class="btn-danger px-4 py-2 rounded-xl text-sm">🗑️ Delete</button>
+                <button onclick="editUser('${user.userId}')" class="btn-primary px-4 py-2 rounded-xl text-sm">✏️ Edit</button>
+                <button onclick="deleteUser('${user.userId}')" class="btn-danger px-4 py-2 rounded-xl text-sm">🗑️ Delete</button>
             </div>
         </div>
-    `}).join('');
+    `).join('');
 }
 
-function editUser(idx) {
-    const user = adminUsers[idx];
-    document.getElementById('editUserId').value = idx;
+function editUser(userId) {
+    const allUsers = getAllUsersFromSQL();
+    const user = allUsers.find(u => u.userId === userId);
+    
+    if (!user) {
+        alert('User not found');
+        return;
+    }
+    
+    document.getElementById('editUserId').value = user.userId;
     document.getElementById('editUserName').value = user.name;
     document.getElementById('editUserEmail').value = user.email;
     document.getElementById('editUserPassword').value = '';  // Don't prefill password
-    document.getElementById('editUserPhone').value = user.phone === 'N/A' ? '' : user.phone;
+    document.getElementById('editUserPhone').value = user.phone || '';
     document.getElementById('editUserSignupDate').value = new Date(user.signupDate).toLocaleString();
     
     document.getElementById('editUserModal').classList.add('active');
 }
 
 function saveUserEdit() {
-    const idx = parseInt(document.getElementById('editUserId').value);
+    const userId = document.getElementById('editUserId').value;
     const name = document.getElementById('editUserName').value.trim();
-    const email = document.getElementById('editUserEmail').value.trim();
+    const email = document.getElementById('editUserEmail').value.trim().toLowerCase();
     const password = document.getElementById('editUserPassword').value.trim();
     const phone = document.getElementById('editUserPhone').value.trim();
     
     if (!name || !email) {
-        alert('Please fill in all required fields');
+        alert('Please fill in all required fields (Name and Email)');
         return;
     }
     
@@ -1623,40 +1831,66 @@ function saveUserEdit() {
         return;
     }
     
-    // Check for duplicate email (excluding current)
-    if (adminUsers.some((u, i) => i !== idx && u.email.toLowerCase() === email.toLowerCase())) {
+    // Check for duplicate email (excluding current user)
+    const allUsers = getAllUsersFromSQL();
+    if (allUsers.some(u => u.userId !== userId && u.email.toLowerCase() === email)) {
         alert('A user with this email already exists!');
         return;
     }
     
-    adminUsers[idx] = {
-        ...adminUsers[idx],
-        name,
-        email,
-        password: password || adminUsers[idx].password,  // Keep old password if not changed
-        phone: phone || 'N/A'
+    const updates = {
+        name: name,
+        email: email,
+        phone: phone || ''
     };
     
-    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(adminUsers));
+    // Only update password if a new one is provided
+    if (password) {
+        if (password.length < 6) {
+            alert('Password must be at least 6 characters');
+            return;
+        }
+        updates.passwordHash = hashPassword(password);
+    }
     
-    closeUserModal();
-    alert('User updated successfully!');
-    renderUsersList();
+    // Update in SQL database
+    const updated = updateUserInSQL(userId, updates);
+    
+    if (updated) {
+        closeUserModal();
+        alert('User updated successfully!');
+        renderUsersList();
+        renderAdminsList();
+    } else {
+        alert('Failed to update user. Please try again.');
+    }
 }
 
 function closeUserModal() {
     document.getElementById('editUserModal').classList.remove('active');
 }
 
-function deleteUser(idx) {
-    const user = adminUsers[idx];
+function deleteUser(userId) {
+    const allUsers = getAllUsersFromSQL();
+    const user = allUsers.find(u => u.userId === userId);
+    
+    if (!user) {
+        alert('User not found');
+        return;
+    }
+    
     if (!confirm(`Are you sure you want to delete "${user.name}" (${user.email})? This action cannot be undone.`)) return;
     
-    adminUsers.splice(idx, 1);
-    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(adminUsers));
+    // Delete from SQL database
+    const deleted = deleteUserFromSQL(userId);
     
-    alert('User deleted successfully!');
-    renderUsersList();
+    if (deleted) {
+        alert('User deleted successfully!');
+        renderUsersList();
+        renderAdminsList();
+    } else {
+        alert('Failed to delete user. Please try again.');
+    }
 }
 
 // Export Data
@@ -1704,7 +1938,15 @@ function exportData() {
     alert('Report exported successfully!');
 }
 
-showSection('dashboard');
+// Initialize database and show dashboard
+window.addEventListener('DOMContentLoaded', async function() {
+    const initialized = await initDatabase();
+    if (initialized) {
+        showSection('dashboard');
+    } else {
+        alert('Failed to initialize database. Please refresh the page.');
+    }
+});
 </script>
 </body>
 </html>

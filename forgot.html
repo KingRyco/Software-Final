@@ -6,6 +6,7 @@
 <title>Forgot Password - ReelDeal Cinema</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
@@ -235,8 +236,90 @@ footer {
 </footer>
 
 <script>
+// =============================================
+// SQL DATABASE IMPLEMENTATION
+// =============================================
+
+let db = null;
 let currentEmail = '';
 let currentUser = null;
+
+// Initialize SQL.js database
+async function initDatabase() {
+    try {
+        const SQL = await initSqlJs({
+            locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
+        });
+
+        // Load existing database from localStorage
+        const savedDb = localStorage.getItem('reeldeal_database');
+        if (savedDb) {
+            const uint8Array = new Uint8Array(JSON.parse(savedDb));
+            db = new SQL.Database(uint8Array);
+            console.log('Database loaded from storage');
+        } else {
+            db = new SQL.Database();
+            console.log('No database found - user needs to register first');
+        }
+        return true;
+    } catch (error) {
+        console.error('Database initialization error:', error);
+        return false;
+    }
+}
+
+// Get user by email from SQL database
+function getUserByEmail(email) {
+    try {
+        const stmt = db.prepare('SELECT * FROM users WHERE email = ?');
+        stmt.bind([email.toLowerCase()]);
+        if (stmt.step()) {
+            const row = stmt.getAsObject();
+            stmt.free();
+            return {
+                userId: row.user_id,
+                name: row.name,
+                email: row.email,
+                phone: row.phone,
+                address: row.address,
+                passwordHash: row.password_hash,
+                accountType: row.account_type,
+                signupDate: row.signup_date
+            };
+        }
+        stmt.free();
+        return null;
+    } catch (error) {
+        console.error('Get user error:', error);
+        return null;
+    }
+}
+
+// Update password in SQL database
+function updatePasswordInDatabase(email, newPasswordHash) {
+    try {
+        db.run(`
+            UPDATE users
+            SET password_hash = ?
+            WHERE email = ?
+        `, [newPasswordHash, email.toLowerCase()]);
+        
+        // Save database to localStorage
+        const data = db.export();
+        const buffer = Array.from(data);
+        localStorage.setItem('reeldeal_database', JSON.stringify(buffer));
+        
+        console.log('Password updated in SQL database');
+        return true;
+    } catch (error) {
+        console.error('Update password error:', error);
+        return false;
+    }
+}
+
+// =============================================
+// UTILITY FUNCTIONS
+// =============================================
 
 // --- AUTO-FORMAT PHONE NUMBER ---
 document.getElementById('phoneVerify').addEventListener('input', function(e) {
@@ -301,30 +384,39 @@ function goToStep(stepNum) {
     if (stepNum === 3) document.getElementById('resetForm').classList.remove('hidden');
 }
 
+// =============================================
+// STEP HANDLERS
+// =============================================
+
 // --- STEP 1: EMAIL VERIFICATION ---
-document.getElementById('emailForm').addEventListener('submit', function(e) {
+document.getElementById('emailForm').addEventListener('submit', async function(e) {
     e.preventDefault();
+    
+    // Ensure database is initialized
+    if (!db) {
+        const initialized = await initDatabase();
+        if (!initialized) {
+            showError('Database initialization failed. Please refresh the page.');
+            return;
+        }
+    }
     
     const email = document.getElementById('email').value.trim().toLowerCase();
     currentEmail = email;
 
-    // Load all registered users
-    const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-    
-    // Find user by email
-    const user = registeredUsers.find(u => u.email.toLowerCase() === email);
+    // Get user from SQL database
+    const user = getUserByEmail(email);
 
     if (!user) {
         // Also check legacy storage format
-        const userId = localStorage.getItem(`user_email:${email}`);
-        if (userId) {
-            const userDataStr = localStorage.getItem(`user:${userId}`);
-            if (userDataStr) {
-                currentUser = JSON.parse(userDataStr);
-                goToStep(2);
-                document.getElementById('errorMessage').classList.add('hidden');
-                return;
-            }
+        const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+        const legacyUser = registeredUsers.find(u => u.email.toLowerCase() === email);
+        
+        if (legacyUser) {
+            currentUser = legacyUser;
+            goToStep(2);
+            document.getElementById('errorMessage').classList.add('hidden');
+            return;
         }
         
         showError('No account found with this email address.');
@@ -358,7 +450,7 @@ document.getElementById('verifyForm').addEventListener('submit', function(e) {
 });
 
 // --- STEP 3: PASSWORD RESET ---
-document.getElementById('resetForm').addEventListener('submit', function(e) {
+document.getElementById('resetForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
     const newPassword = document.getElementById('newPassword').value;
@@ -380,22 +472,37 @@ document.getElementById('resetForm').addEventListener('submit', function(e) {
         return;
     }
 
-    // Update password in both storage locations
-    currentUser.passwordHash = hashPassword(newPassword);
+    // Hash the new password
+    const newPasswordHash = hashPassword(newPassword);
+    
+    // Update password in SQL database (PRIMARY)
+    const sqlUpdated = updatePasswordInDatabase(currentEmail, newPasswordHash);
+    
+    if (!sqlUpdated) {
+        showError('Failed to update password. Please try again.');
+        return;
+    }
 
-    // Update in registeredUsers array
+    // Update in localStorage registeredUsers array (for backward compatibility)
     let registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
     const userIndex = registeredUsers.findIndex(u => u.email.toLowerCase() === currentEmail);
     
     if (userIndex !== -1) {
-        registeredUsers[userIndex].passwordHash = currentUser.passwordHash;
+        registeredUsers[userIndex].passwordHash = newPasswordHash;
         localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
+        console.log('Password updated in localStorage backup');
     }
 
     // Update legacy storage if it exists
     const userId = localStorage.getItem(`user_email:${currentEmail}`);
     if (userId) {
-        localStorage.setItem(`user:${userId}`, JSON.stringify(currentUser));
+        const userDataStr = localStorage.getItem(`user:${userId}`);
+        if (userDataStr) {
+            const userData = JSON.parse(userDataStr);
+            userData.passwordHash = newPasswordHash;
+            localStorage.setItem(`user:${userId}`, JSON.stringify(userData));
+            console.log('Password updated in legacy storage');
+        }
     }
 
     // Success!
@@ -404,6 +511,14 @@ document.getElementById('resetForm').addEventListener('submit', function(e) {
     setTimeout(() => {
         window.location.href = 'login.html';
     }, 2000);
+});
+
+// =============================================
+// INITIALIZE DATABASE ON PAGE LOAD
+// =============================================
+
+window.addEventListener('DOMContentLoaded', async function() {
+    await initDatabase();
 });
 </script>
 
