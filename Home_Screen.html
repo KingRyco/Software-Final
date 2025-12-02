@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReelDeal Cinema - Book Movie Tickets</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/feather-icons"></script>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+    * { 
+        font-family: 'Inter', sans-serif;
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    body { 
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        min-height: 100vh;
+        position: relative;
+        overflow-x: hidden;
+    }
+    body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: 
+            radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(255, 138, 101, 0.3) 0%, transparent 50%),
+            radial-gradient(circle at 40% 20%, rgba(74, 144, 226, 0.3) 0%, transparent 50%);
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .glass-effect { 
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+    .movie-card { 
+        transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        border-radius: 20px;
+    }
+    .movie-card::before { 
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, rgba(74, 144, 226, 0.15), rgba(255, 138, 101, 0.15));
+        opacity: 0;
+        transition: opacity 0.5s ease;
+        z-index: 1;
+    }
+    .movie-card:hover::before { opacity: 1; }
+    .movie-card:hover { 
+        transform: translateY(-16px) scale(1.03);
+        box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.5);
+    }
+    .movie-card img { 
+        transition: transform 0.5s ease;
+    }
+    .movie-card:hover img { transform: scale(1.08); }
+
+    .hero-gradient { 
+        background: linear-gradient(135deg, #4a90e2 0%, #7877c6 50%, #ff8a65 100%);
+        position: relative;
+        overflow: hidden;
+        border-radius: 28px;
+    }
+    .hero-gradient::before { 
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+        animation: pulse 10s ease-in-out infinite;
+    }
+    @keyframes pulse { 
+        0%,100%{transform:scale(1) rotate(0deg);} 
+        50%{transform:scale(1.15) rotate(180deg);} 
+    }
+
+    .search-container { 
+        transition: all 0.4s ease;
+    }
+    .search-container:focus-within { 
+        transform: scale(1.03);
+        filter: drop-shadow(0 10px 30px rgba(74, 144, 226, 0.4));
+    }
+
+    .btn-primary { 
+        background: linear-gradient(135deg, #4a90e2 0%, #7877c6 100%);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        border: none;
+        cursor: pointer;
+    }
+    .btn-primary::before { 
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        background: rgba(255,255,255,0.3);
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        transition: width 0.6s ease, height 0.6s ease;
+    }
+    .btn-primary:hover::before { 
+        width: 400px;
+        height: 400px;
+    }
+    .btn-primary:hover { 
+        transform: translateY(-3px);
+        box-shadow: 0 15px 35px -5px rgba(74, 144, 226, 0.6);
+    }
+
+    .modal-content { 
+        animation: modalSlideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    @keyframes modalSlideIn { 
+        from { 
+            opacity: 0;
+            transform: translateY(-60px) scale(0.92);
+        } 
+        to { 
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        } 
+    }
+
+    .rating-badge { 
+        background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+        box-shadow: 0 6px 20px rgba(255,215,0,0.5);
+        animation: badgePulse 2s ease-in-out infinite;
+    }
+    @keyframes badgePulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+    .section-title { 
+        position: relative;
+        display: inline-block;
+    }
+    .section-title::after { 
+        content: '';
+        position: absolute;
+        bottom: -10px;
+        left: 0;
+        width: 70%;
+        height: 5px;
+        background: linear-gradient(90deg, #4a90e2 0%, #7877c6 50%, #ff8a65 100%);
+        border-radius: 3px;
+        animation: underlineGlow 3s ease-in-out infinite;
+    }
+    @keyframes underlineGlow {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.6; }
+    }
+
+    .review-input:focus { 
+        box-shadow: 0 0 0 4px rgba(74, 144, 226, 0.25);
+        border-color: #4a90e2;
+    }
+    .fade-in { 
+        animation: fadeIn 0.8s ease-in;
+    }
+    @keyframes fadeIn { 
+        from { 
+            opacity: 0;
+            transform: translateY(20px);
+        } 
+        to { 
+            opacity: 1;
+            transform: translateY(0);
+        } 
+    }
+
+    .review-item { 
+        background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%);
+        border-left: 5px solid #4a90e2;
+        transition: all 0.3s ease;
+    }
+    .review-item:hover {
+        transform: translateX(8px);
+        box-shadow: 0 4px 15px rgba(74, 144, 226, 0.2);
+    }
+    
+    .ticket-card { 
+        background: linear-gradient(135deg, #4a90e2 0%, #7877c6 100%);
+        border: 3px dashed rgba(255,255,255,0.6);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+    }
+    
+    .ticket-history-item {
+        background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%);
+        border-left: 5px solid #4a90e2;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 16px;
+    }
+    
+    .ticket-history-item:hover {
+        transform: translateX(10px) scale(1.02);
+        box-shadow: 0 8px 25px rgba(74, 144, 226, 0.25);
+        border-left-color: #ff8a65;
+    }
+</style>
+</head>
+<body>
+<main class="container mx-auto px-4 py-8 fade-in relative z-10">
+
+<!-- Hero Section -->
+<section class="hero-gradient rounded-3xl p-12 mb-12 text-white shadow-2xl relative">
+    <div class="max-w-3xl relative z-10">
+        <h1 class="text-5xl md:text-7xl font-black mb-6 tracking-tight">ReelDeal Cinema</h1>
+        <p class="text-2xl mb-8 font-light opacity-95">Your gateway to cinematic excellence</p>
+        <div class="flex flex-wrap gap-4">
+            <a href="#current" class="inline-block bg-white text-purple-700 px-8 py-4 rounded-full font-bold text-lg hover:bg-opacity-90 transition shadow-lg hover:shadow-xl transform hover:scale-105">Browse Current Movies</a>
+            <a href="#upcoming" class="inline-block bg-purple-800 bg-opacity-50 backdrop-blur text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-opacity-70 transition shadow-lg hover:shadow-xl transform hover:scale-105 border-2 border-white border-opacity-30">Browse Upcoming Movies</a>
+            <button id="viewTicketsBtn" class="inline-block bg-green-500 bg-opacity-80 backdrop-blur text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-opacity-90 transition shadow-lg hover:shadow-xl transform hover:scale-105 border-2 border-white border-opacity-30">🎫 My Tickets</button>
+            <button id="logoutBtn" class="inline-block bg-red-500 bg-opacity-80 backdrop-blur text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-opacity-90 transition shadow-lg hover:shadow-xl transform hover:scale-105 border-2 border-white border-opacity-30" onclick="window.location.href='login.html'">
+            🚪 Logout
+            </button>
+        </div>
+    </div>
+</section>
+
+<!-- Search Movies -->
+<section class="mb-12">
+    <div class="text-center mb-6">
+        <h2 class="text-3xl font-bold text-white mb-2">Search Movies</h2>
+        <p class="text-white text-opacity-90">Find your next favorite film</p>
+    </div>
+    <div class="relative w-full md:w-2/3 lg:w-1/2 mx-auto search-container">
+        <input type="text" id="searchBox" placeholder="Search for movies by name..." 
+        class="w-full px-6 py-4 glass-effect rounded-2xl focus:outline-none focus:ring-4 focus:ring-purple-400 text-lg shadow-lg">
+        <i data-feather="search" class="absolute right-6 top-5 text-purple-600"></i>
+    </div>
+    <div id="searchFeedback" class="text-center mt-4 hidden">
+        <div class="glass-effect inline-block px-6 py-4 rounded-2xl shadow-lg max-w-lg">
+            <p id="searchFeedbackText" class="text-gray-800 mb-3"></p>
+            <button id="requestMovieBtn" class="btn-primary text-white px-6 py-3 rounded-xl font-bold shadow-lg hidden">📬 Request This Movie</button>
+        </div>
+    </div>
+</section>
+
+<!-- Current Movies -->
+<section id="current" class="mb-20">
+    <h2 class="text-4xl font-black mb-10 text-white section-title">Browse Current Movies</h2>
+    <p class="text-white text-lg mb-8 opacity-90">Now showing in theaters - Book your tickets today!</p>
+    <div id="currentMovies" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"></div>
+</section>
+
+<!-- Upcoming Movies -->
+<section id="upcoming" class="mb-20">
+    <h2 class="text-4xl font-black mb-10 text-white section-title">Browse Upcoming Movies</h2>
+    <p class="text-white text-lg mb-8 opacity-90">Coming soon to a theater near you</p>
+    <div id="upcomingMovies" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"></div>
+</section>
+
+<!-- Movie Modal -->
+<div id="movieModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50 backdrop-blur-sm">
+    <div class="glass-effect rounded-3xl shadow-2xl max-w-2xl w-full mx-4 p-8 relative overflow-hidden max-h-[90vh] overflow-y-auto modal-content">
+        <button id="closeModal" class="absolute top-6 right-6 text-gray-600 hover:text-gray-900 text-3xl font-bold transition hover:rotate-90 transform duration-300">&times;</button>
+        
+        <img id="modalImage" src="" class="w-full h-80 object-cover rounded-2xl mb-6 shadow-lg">
+        <div class="space-y-4">
+            <h2 id="modalTitle" class="text-4xl font-black text-gray-900"></h2>
+            <p id="modalGenre" class="text-lg text-gray-700 font-medium"></p>
+            <div class="pt-4">
+                <h3 class="text-xl font-bold text-gray-900 mb-2">Synopsis</h3>
+                <p id="modalSynopsis" class="text-gray-600 text-lg leading-relaxed"></p>
+            </div>
+            <div>
+                <h3 class="text-xl font-bold text-gray-900 mb-2">Cast</h3>
+                <p id="modalCast" class="text-gray-700 text-lg"></p>
+            </div>
+            <div>
+                <h3 class="text-xl font-bold text-gray-900 mb-2">Runtime</h3>
+                <p id="modalRuntime" class="text-gray-700 text-lg"></p>
+            </div>
+        </div>
+        
+        <!-- Reviews -->
+        <div class="mt-8 pt-6 border-t-2 border-gray-200">
+            <h3 class="text-2xl font-bold mb-4 text-gray-900">Reviews</h3>
+            <div id="reviewsContainer" class="mb-6">
+                <ul id="modalReviewsList" class="space-y-3 max-h-64 overflow-y-auto"></ul>
+            </div>
+            <div class="bg-gray-50 p-4 rounded-xl border-2 border-gray-200">
+                <label for="reviewInput" class="block text-sm font-bold text-gray-700 mb-2">Write Your Review</label>
+                <textarea id="reviewInput" placeholder="Share your thoughts about this movie..." 
+                class="w-full border-2 border-gray-300 rounded-xl p-4 mb-4 focus:outline-none focus:border-purple-500 transition review-input resize-none" 
+                rows="3"></textarea>
+                <button id="submitReviewBtn" class="btn-primary text-white px-6 py-3 rounded-xl font-bold shadow-lg w-full">Submit Review</button>
+            </div>
+
+            <!-- Buy Ticket Button -->
+            <button id="buyTicketBtn" class="btn-primary text-white px-6 py-3 rounded-xl font-bold shadow-lg mt-6 w-full">🎟️ Buy Ticket</button>
+
+            <!-- Ticket & Payment Section -->
+            <div id="ticketPurchaseSection" class="mt-8 pt-6 border-t-2 border-gray-200 hidden">
+                <!-- Step 1 -->
+                <div id="ticketStep1" class="space-y-4">
+                    <div>
+                        <label for="theaterSelect" class="block text-sm font-bold text-gray-700 mb-1">Select Theater</label>
+                        <select id="theaterSelect" class="w-full p-3 rounded-xl border-2 border-gray-300 focus:outline-none focus:border-purple-500">
+                            <option value="">-- Choose Theater --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="showtimeSelect" class="block text-sm font-bold text-gray-700 mb-1">Select Show Time</label>
+                        <select id="showtimeSelect" class="w-full p-3 rounded-xl border-2 border-gray-300 focus:outline-none focus:border-purple-500">
+                            <option value="">-- Choose Show Time --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="ticketQuantity" class="block text-sm font-bold text-gray-700 mb-1">Number of Tickets</label>
+                        <input type="number" id="ticketQuantity" min="1" max="10" value="1" class="w-full p-3 rounded-xl border-2 border-gray-300 focus:outline-none focus:border-purple-500">
+                    </div>
+                    <button id="proceedToPaymentBtn" class="btn-primary text-white px-6 py-3 rounded-xl font-bold shadow-lg w-full">Proceed to Payment 💳</button>
+                </div>
+
+                <!-- Step 2 -->
+                <div id="ticketStep2" class="space-y-4 hidden mt-6">
+                    <h4 class="text-xl font-bold text-gray-900 mb-4">Select Payment Method</h4>
+                    <div class="flex flex-col gap-3">
+                        <button class="paymentBtn btn-primary text-white px-6 py-3 rounded-xl font-bold shadow-lg w-full" data-method="Credit Card">Credit Card</button>
+                        <button class="paymentBtn btn-primary text-white px-6 py-3 rounded-xl font-bold shadow-lg w-full" data-method="Venmo">Venmo</button>
+                        <button class="paymentBtn btn-primary text-white px-6 py-3 rounded-xl font-bold shadow-lg w-full" data-method="PayPal">PayPal</button>
+                    </div>
+                    <button id="backToTicketsBtn" class="mt-4 w-full py-3 rounded-xl border-2 border-gray-300 text-gray-700 font-bold hover:bg-gray-100 transition">← Back</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ticket History Modal -->
+<div id="ticketHistoryModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50 backdrop-blur-sm">
+    <div class="glass-effect rounded-3xl shadow-2xl max-w-3xl w-full mx-4 p-8 relative overflow-hidden max-h-[90vh] overflow-y-auto modal-content">
+        <button id="closeTicketHistoryModal" class="absolute top-6 right-6 text-gray-600 hover:text-gray-900 text-3xl font-bold transition hover:rotate-90 transform duration-300">&times;</button>
+        
+        <h2 class="text-4xl font-black text-gray-900 mb-6">🎫 My Ticket History</h2>
+        
+        <div id="ticketHistoryContent" class="space-y-4">
+            <!-- Ticket history items will be displayed here -->
+        </div>
+    </div>
+</div>
+
+<!-- Electronic Ticket Display Modal -->
+<div id="electronicTicketModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50 backdrop-blur-sm">
+    <div class="glass-effect rounded-3xl shadow-2xl max-w-xl w-full mx-4 p-8 relative overflow-hidden modal-content">
+        <button id="closeElectronicTicketModal" class="absolute top-6 right-6 text-gray-600 hover:text-gray-900 text-3xl font-bold transition hover:rotate-90 transform duration-300">&times;</button>
+        
+        <div class="text-center mb-6">
+            <h2 class="text-3xl font-black text-gray-900 mb-2">🎉 Ticket Purchase Complete!</h2>
+            <p class="text-gray-600">Your electronic ticket has been generated</p>
+        </div>
+        
+        <div id="electronicTicketContent" class="ticket-card text-white p-8 rounded-2xl shadow-2xl">
+            <!-- Electronic ticket content will be displayed here -->
+        </div>
+        
+        <button id="closeTicketAndViewHistory" class="mt-6 w-full btn-primary text-white px-6 py-4 rounded-xl font-bold shadow-lg">
+            View My Tickets
+        </button>
+    </div>
+</div>
+
+<!-- Movie Request Modal -->
+<div id="movieRequestModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50 backdrop-blur-sm">
+    <div class="glass-effect rounded-3xl shadow-2xl max-w-xl w-full mx-4 p-8 relative overflow-hidden modal-content">
+        <button id="closeMovieRequestModal" class="absolute top-6 right-6 text-gray-600 hover:text-gray-900 text-3xl font-bold transition hover:rotate-90 transform duration-300">&times;</button>
+        
+        <div class="text-center mb-6">
+            <h2 class="text-3xl font-black text-gray-900 mb-2">📬 Request a Movie</h2>
+            <p class="text-gray-600">Let us know what movie you'd like to see</p>
+        </div>
+        
+        <div class="space-y-4">
+            <div>
+                <label for="requestMovieTitle" class="block text-sm font-bold text-gray-700 mb-2">Movie Title *</label>
+                <input type="text" id="requestMovieTitle" placeholder="Enter movie name" 
+                class="w-full p-3 rounded-xl border-2 border-gray-300 focus:outline-none focus:border-purple-500">
+            </div>
+            <div>
+                <label for="requestMovieType" class="block text-sm font-bold text-gray-700 mb-2">Movie Status *</label>
+                <select id="requestMovieType" class="w-full p-3 rounded-xl border-2 border-gray-300 focus:outline-none focus:border-purple-500">
+                    <option value="released">Already Released (in theaters or streaming)</option>
+                    <option value="upcoming">Not Yet Released</option>
+                    <option value="unsure">Not Sure</option>
+                </select>
+            </div>
+            <div>
+                <label for="requestMovieComments" class="block text-sm font-bold text-gray-700 mb-2">Additional Comments (Optional)</label>
+                <textarea id="requestMovieComments" placeholder="Any additional information..." 
+                class="w-full p-3 rounded-xl border-2 border-gray-300 focus:outline-none focus:border-purple-500 resize-none" 
+                rows="3"></textarea>
+            </div>
+            <button id="submitMovieRequestBtn" class="btn-primary text-white px-6 py-3 rounded-xl font-bold shadow-lg w-full">
+                Submit Request
+            </button>
+        </div>
+    </div>
+</div>
+
+</main>
+
+<script>
+feather.replace();
+
+// ===== DEFAULT MOVIE DATA =====
+const defaultCurrentMovies = [
+    {id:1, title:"Dune: Part Two", genre:"Sci-Fi", rating:4.8, price:15.99, image:"https://blog.teufelaudio.nl/wp-content/uploads/2024/02/dune-2-imago415303603-2.jpg", synopsis:"Epic sci-fi adventure continues.", cast:"Timothée Chalamet, Zendaya", runtime:"2h 45m"},
+    {id:2, title:"The Batman", genre:"Action", rating:4.6, price:14.99, image:"https://m.media-amazon.com/images/M/MV5BMDdmMTBiNTYtMDIzNi00NGVlLWIzMDYtZTk3MTQ3NGQxZGEwXkEyXkFqcGdeQXVyMzMwOTU5MDk@._V1_FMjpg_UX1000_.jpg", synopsis:"The Dark Knight returns.", cast:"Robert Pattinson, Zoë Kravitz", runtime:"2h 55m"},
+    {id:3, title:"Everything Everywhere All at Once", genre:"Adventure", rating:4.9, price:13.99, image:"https://wallpapers.com/images/hd/everything-everywhere-all-at-once-6nyvo1vueb3ph27x.jpg", synopsis:"A multiverse story.", cast:"Michelle Yeoh, Ke Huy Quan", runtime:"2h 20m"},
+    {id:4, title:"Top Gun: Maverick", genre:"Action", rating:4.7, price:14.50, image:"https://static1.srcdn.com/wordpress/wp-content/uploads/2022/05/top-gun-maverick.jpg", synopsis:"Return to the skies.", cast:"Tom Cruise, Miles Teller", runtime:"2h 11m"},
+    {id:5, title:"Avengers: Endgame", genre:"Action", rating:4.9, price:16.99, image:"https://disney.images.edge.bamgrid.com/ripcut-delivery/v2/variant/disney/7b350a2f-0b3e-4033-8125-34c4d67e3bbe/compose?aspectRatio=1.78&format=webp&width=1200", synopsis:"The ultimate showdown.", cast:"Robert Downey Jr., Chris Evans", runtime:"3h 2m"},
+    {id:6, title:"Avengers: Infinity War", genre:"Action", rating:4.8, price:15.50, image:"https://cdn.marvel.com/content/2x/avengersinfinitywar_lob_mas_hlf_01_3.jpg", synopsis:"Thanos threatens the universe.", cast:"Chris Hemsworth, Mark Ruffalo", runtime:"2h 40m"},
+    {id:7, title:"The Avengers", genre:"Action", rating:4.7, price:12.99, image:"https://m.media-amazon.com/images/M/MV5BNGE0YTVjNzUtNzJjOS00NGNlLTgxMzctZTY4YTE1Y2Y1ZTU4XkEyXkFqcGc@._V1_.jpg", synopsis:"Earth's mightiest heroes unite.", cast:"Robert Downey Jr., Chris Evans", runtime:"2h 23m"},
+    {id:8, title:"X-Men: Days of Future Past", genre:"Action", rating:4.6, price:13.50, image:"https://m.media-amazon.com/images/M/MV5BNzNiYWE4NjMtMTU4OS00NmM4LWE4ZjAtYmE5OTA5NjkzODExXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg", synopsis:"Mutants fight for the future.", cast:"Hugh Jackman, James McAvoy", runtime:"2h 11m"}
+];
+
+const defaultUpcomingMovies = [
+    {id:101, title:"Spider-Man: Brand New Day", genre:"Action", rating:4.9, price:17.99, image:"https://posterspy.com/wp-content/uploads/2025/04/SPIDER-MAN-BRAND-NEW-DAY.jpg", synopsis:"Spider-Man faces new challenges.", cast:"Tom Holland, Zendaya", runtime:"2h 15m"},
+    {id:102, title:"Avengers: Secret Wars", genre:"Action", rating:4.8, price:18.99, image:"https://preview.redd.it/secret-wars-a-concept-poster-i-made-v0-4e070zcywf0d1.jpeg?auto=webp&s=8669c038b7652ba2aaf43229355d87940ba9a8ad", synopsis:"Heroes unite for secret wars.", cast:"Chris Hemsworth, Chris Evans", runtime:"2h 50m"},
+    {id:103, title:"X-Men", genre:"Action", rating:4.7, price:16.50, image:"https://preview.redd.it/i-made-this-fan-made-poster-for-an-x-men-movie-set-in-the-v0-v1v49alzrvse1.jpeg?width=1080&crop=smart&auto=webp&s=32b0764ca6a5f7829680b041f142002e8012e2df", synopsis:"New generation of mutants.", cast:"James McAvoy, Michael Fassbender", runtime:"2h 12m"},
+    {id:104, title:"The Batman: Part II", genre:"Action", rating:4.9, price:17.50, image:"https://preview.redd.it/my-fan-made-poster-for-the-batman-2-v0-z6o9gfw4318b1.jpg?width=640&crop=smart&auto=webp&s=dcf3de65843c6d2ec9fdc75c16fc5296afc12858", synopsis:"Batman returns for vengeance.", cast:"Robert Pattinson, Zoë Kravitz", runtime:"2h 45m"}
+];
+
+const defaultTheaters = ["Lubbock", "Amarillo", "Levelland", "Plainview", "Snyder", "Abilene"];
+const defaultShowtimes = [
+    {name:"Morning", time:"10:00 AM"},
+    {name:"Afternoon", time:"2:00 PM"},
+    {name:"Evening", time:"6:00 PM"}
+];
+
+// Load data from localStorage or use defaults
+let currentMoviesData = JSON.parse(localStorage.getItem('homeScreenCurrentMovies') || 'null') || defaultCurrentMovies;
+let upcomingMoviesData = defaultUpcomingMovies;
+let theaters = JSON.parse(localStorage.getItem('homeScreenTheaters') || 'null') || defaultTheaters;
+let showtimes = JSON.parse(localStorage.getItem('homeScreenShowtimes') || 'null') || defaultShowtimes;
+
+// ===== UTILITY FUNCTIONS =====
+function generateTicketID() {
+    const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 10000);
+    return `RDC-${timestamp}-${random}`;
+}
+
+function getCurrentDateTime() {
+    const now = new Date();
+    return now.toLocaleString('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric', 
+        hour: 'numeric', 
+        minute: '2-digit',
+        hour12: true 
+    });
+}
+
+function saveTicketToHistory(ticketData) {
+    let ticketHistory = JSON.parse(localStorage.getItem('ticketHistory') || '[]');
+    ticketHistory.push(ticketData);
+    localStorage.setItem('ticketHistory', JSON.stringify(ticketHistory));
+}
+
+function populateTheaterSelect() {
+    const select = document.getElementById('theaterSelect');
+    select.innerHTML = '<option value="">-- Choose Theater --</option>' +
+        theaters.map(t => `<option value="${t}">${t}</option>`).join('');
+}
+
+function populateShowtimeSelect() {
+    const select = document.getElementById('showtimeSelect');
+    select.innerHTML = '<option value="">-- Choose Show Time --</option>' +
+        showtimes.map(s => `<option value="${s.name}">${s.name} (${s.time})</option>`).join('');
+}
+
+// ===== RENDER FUNCTIONS =====
+function renderMovies(movies, containerId, showDetailsButton = true, allowBuy = false) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+    
+    if (movies.length === 0) {
+        container.innerHTML = '<div class="col-span-full text-center py-12"><p class="text-white text-xl">No movies found matching your search.</p></div>';
+        return;
+    }
+    
+    movies.forEach(movie => {
+        const card = document.createElement('div');
+        card.className = "movie-card glass-effect rounded-2xl shadow-xl overflow-hidden cursor-pointer";
+        card.innerHTML = `
+            <div class="relative overflow-hidden">
+                <img src="${movie.image}" class="w-full h-80 object-cover" alt="${movie.title} poster">
+                <div class="absolute top-4 right-4 rating-badge px-3 py-1 rounded-full font-bold text-gray-900">⭐ ${movie.rating}</div>
+            </div>
+            <div class="p-6 relative z-10">
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">${movie.title}</h2>
+                <p class="text-purple-600 font-semibold mb-2">${movie.genre}</p>
+                <p class="text-2xl font-black text-green-600 mb-3">${movie.price.toFixed(2)}</p>
+                <p class="text-gray-600 text-sm mb-4 leading-relaxed">${movie.synopsis}</p>
+                ${showDetailsButton ? `<button class="viewDetailsBtn w-full btn-primary text-white px-6 py-3 rounded-xl font-bold shadow-lg">View Details</button>` : ''}
+            </div>
+        `;
+        
+        const viewBtn = card.querySelector('.viewDetailsBtn');
+        if (viewBtn) {
+            viewBtn.addEventListener('click', () => openModal(movie, allowBuy));
+        }
+        
+        container.appendChild(card);
+    });
+}
+
+// ===== MODAL FUNCTIONS =====
+function openModal(movie, allowBuy) {
+    document.getElementById('modalTitle').innerText = movie.title;
+    document.getElementById('modalImage').src = movie.image;
+    document.getElementById('modalImage').alt = movie.title + ' poster';
+    document.getElementById('modalGenre').innerText = `${movie.genre} • ⭐ ${movie.rating}`;
+    document.getElementById('modalSynopsis').innerText = movie.synopsis;
+    document.getElementById('modalCast').innerText = movie.cast;
+    document.getElementById('modalRuntime').innerText = movie.runtime;
+
+    // Store movie price for later use
+    document.getElementById('movieModal').dataset.moviePrice = movie.price;
+
+    // Show/hide buy button based on allowBuy
+    const buyBtn = document.getElementById('buyTicketBtn');
+    if (allowBuy) {
+        buyBtn.classList.remove('hidden');
+    } else {
+        buyBtn.classList.add('hidden');
+    }
+
+    document.getElementById('movieModal').classList.remove('hidden');
+
+    // Reset ticket section
+    document.getElementById('ticketPurchaseSection').classList.add('hidden');
+    document.getElementById('ticketStep1').classList.remove('hidden');
+    document.getElementById('ticketStep2').classList.add('hidden');
+    
+    // Load reviews for this movie
+    loadReviews(movie.title);
+}
+
+function closeModal() {
+    document.getElementById('movieModal').classList.add('hidden');
+}
+
+// ===== REVIEW FUNCTIONS =====
+function loadReviews(movieTitle) {
+    const reviewsData = JSON.parse(localStorage.getItem('reviewsData') || '{}');
+    const reviews = reviewsData[movieTitle] || [];
+    const reviewsList = document.getElementById('modalReviewsList');
+    
+    if (reviews.length === 0) {
+        reviewsList.innerHTML = '<p class="text-gray-500 italic text-center py-4">No reviews yet. Be the first to share your thoughts!</p>';
+    } else {
+        reviewsList.innerHTML = reviews.map((r, idx) => `
+            <li class="review-item p-3 rounded-xl shadow-sm text-gray-700">
+                <strong>Review ${idx + 1}:</strong> ${r}
+            </li>
+        `).join('');
+    }
+}
+
+function submitReview() {
+    const reviewText = document.getElementById('reviewInput').value.trim();
+    if (!reviewText) {
+        alert('Please enter a review before submitting.');
+        return;
+    }
+    
+    const title = document.getElementById('modalTitle').innerText;
+    const reviewsData = JSON.parse(localStorage.getItem('reviewsData') || '{}');
+    
+    if (!reviewsData[title]) {
+        reviewsData[title] = [];
+    }
+    
+    reviewsData[title].push(reviewText);
+    localStorage.setItem('reviewsData', JSON.stringify(reviewsData));
+    
+    loadReviews(title);
+    document.getElementById('reviewInput').value = '';
+    alert('Review submitted successfully!');
+}
+
+// ===== TICKET FUNCTIONS =====
+function displayElectronicTicket(ticketData) {
+    const ticketContent = document.getElementById('electronicTicketContent');
+    ticketContent.innerHTML = `
+        <div class="text-center mb-6">
+            <div class="text-6xl mb-4">🎟️</div>
+            <h3 class="text-2xl font-black mb-2">${ticketData.movie}</h3>
+            <p class="text-white text-opacity-90">${ticketData.genre}</p>
+        </div>
+        
+        <div class="space-y-3 text-white">
+            <div class="flex justify-between border-b border-white border-opacity-30 pb-2">
+                <span class="font-semibold">Ticket ID:</span>
+                <span class="font-mono">${ticketData.ticketId}</span>
+            </div>
+            <div class="flex justify-between border-b border-white border-opacity-30 pb-2">
+                <span class="font-semibold">Theater:</span>
+                <span>${ticketData.theater}</span>
+            </div>
+            <div class="flex justify-between border-b border-white border-opacity-30 pb-2">
+                <span class="font-semibold">Showtime:</span>
+                <span>${ticketData.showtime}</span>
+            </div>
+            <div class="flex justify-between border-b border-white border-opacity-30 pb-2">
+                <span class="font-semibold">Tickets:</span>
+                <span>${ticketData.quantity} × ${ticketData.price.toFixed(2)} = ${(ticketData.quantity * ticketData.price).toFixed(2)}</span>
+            </div>
+            <div class="flex justify-between border-b border-white border-opacity-30 pb-2">
+                <span class="font-semibold">Payment:</span>
+                <span>${ticketData.paymentMethod}</span>
+            </div>
+            <div class="flex justify-between pt-2">
+                <span class="font-semibold">Purchase Date:</span>
+                <span class="text-sm">${ticketData.purchaseDate}</span>
+            </div>
+        </div>
+        
+        <div class="mt-6 pt-6 border-t border-white border-opacity-30 text-center">
+            <p class="text-white text-opacity-80 text-sm">Show this ticket at the theater entrance</p>
+        </div>
+    `;
+    
+    document.getElementById('electronicTicketModal').classList.remove('hidden');
+}
+
+function displayTicketHistory() {
+    const ticketHistory = JSON.parse(localStorage.getItem('ticketHistory') || '[]');
+    const container = document.getElementById('ticketHistoryContent');
+    
+    if (ticketHistory.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-12">
+                <div class="text-6xl mb-4">🎬</div>
+                <p class="text-gray-600 text-lg">No tickets purchased yet</p>
+                <p class="text-gray-500">Start booking your favorite movies!</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = ticketHistory.reverse().map(ticket => `
+        <div class="ticket-history-item p-6 rounded-xl shadow-md">
+            <div class="flex justify-between items-start mb-3">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900">${ticket.movie}</h3>
+                    <p class="text-purple-600 font-semibold">${ticket.genre}</p>
+                </div>
+                <div class="text-right">
+                    <span class="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-bold">
+                        ${ticket.quantity} Ticket${ticket.quantity > 1 ? 's' : ''}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-3 text-sm text-gray-700 mb-3">
+                <div>
+                    <span class="font-semibold">Ticket ID:</span>
+                    <p class="font-mono text-xs">${ticket.ticketId}</p>
+                </div>
+                <div>
+                    <span class="font-semibold">Theater:</span>
+                    <p>${ticket.theater}</p>
+                </div>
+                <div>
+                    <span class="font-semibold">Showtime:</span>
+                    <p>${ticket.showtime}</p>
+                </div>
+                <div>
+                    <span class="font-semibold">Total:</span>
+                    <p class="font-bold">${(ticket.quantity * ticket.price).toFixed(2)}</p>
+                </div>
+            </div>
+            
+            <div class="text-xs text-gray-500 border-t border-gray-200 pt-2">
+                Purchased: ${ticket.purchaseDate} • Payment: ${ticket.paymentMethod}
+            </div>
+        </div>
+    `).join('');
+    
+    document.getElementById('ticketHistoryModal').classList.remove('hidden');
+}
+
+function showTicketPurchaseSection() {
+    document.getElementById('ticketPurchaseSection').classList.remove('hidden');
+    document.getElementById('ticketStep1').scrollIntoView({ behavior: 'smooth' });
+}
+
+function proceedToPayment() {
+    const theater = document.getElementById('theaterSelect').value;
+    const showtime = document.getElementById('showtimeSelect').value;
+    const quantity = parseInt(document.getElementById('ticketQuantity').value);
+    
+    if (!theater || !showtime || !quantity || quantity < 1 || quantity > 10) {
+        alert('Please select theater, showtime, and valid number of tickets (1-10).');
+        return;
+    }
+    
+    document.getElementById('ticketStep1').classList.add('hidden');
+    document.getElementById('ticketStep2').classList.remove('hidden');
+}
+
+function backToTicketSelection() {
+    document.getElementById('ticketStep2').classList.add('hidden');
+    document.getElementById('ticketStep1').classList.remove('hidden');
+}
+
+function processPayment(paymentMethod) {
+    const movieTitle = document.getElementById('modalTitle').innerText;
+    const movieGenre = document.getElementById('modalGenre').innerText.split('•')[0].trim();
+    const moviePrice = parseFloat(document.getElementById('movieModal').dataset.moviePrice);
+    const theater = document.getElementById('theaterSelect').value;
+    const showtime = document.getElementById('showtimeSelect').value;
+    const quantity = parseInt(document.getElementById('ticketQuantity').value);
+    
+    const ticketId = generateTicketID();
+    const purchaseDate = getCurrentDateTime();
+    
+    const ticketData = {
+        ticketId: ticketId,
+        movie: movieTitle,
+        genre: movieGenre,
+        theater: theater,
+        showtime: showtime,
+        quantity: quantity,
+        price: moviePrice,
+        paymentMethod: paymentMethod,
+        purchaseDate: purchaseDate
+    };
+    
+    saveTicketToHistory(ticketData);
+    displayElectronicTicket(ticketData);
+    
+    // Reset form
+    document.getElementById('ticketStep1').classList.remove('hidden');
+    document.getElementById('ticketStep2').classList.add('hidden');
+    document.getElementById('ticketPurchaseSection').classList.add('hidden');
+    document.getElementById('theaterSelect').value = '';
+    document.getElementById('showtimeSelect').value = '';
+    document.getElementById('ticketQuantity').value = 1;
+    document.getElementById('movieModal').classList.add('hidden');
+}
+
+// ===== SEARCH FUNCTION =====
+function searchMovies(searchTerm) {
+    const term = searchTerm.toLowerCase().trim();
+    const searchFeedback = document.getElementById('searchFeedback');
+    const searchFeedbackText = document.getElementById('searchFeedbackText');
+    const requestMovieBtn = document.getElementById('requestMovieBtn');
+    
+    if (!term) {
+        searchFeedback.classList.add('hidden');
+        renderMovies(currentMoviesData, 'currentMovies', true, true);
+        renderMovies(upcomingMoviesData, 'upcomingMovies', true, false);
+        return;
+    }
+    
+    const filteredCurrent = currentMoviesData.filter(m => m.title.toLowerCase().includes(term));
+    const filteredUpcoming = upcomingMoviesData.filter(m => m.title.toLowerCase().includes(term));
+    
+    renderMovies(filteredCurrent, 'currentMovies', true, true);
+    renderMovies(filteredUpcoming, 'upcomingMovies', true, false);
+    
+    // Show feedback if no results found
+    if (filteredCurrent.length === 0 && filteredUpcoming.length === 0 && term.length > 2) {
+        searchFeedback.classList.remove('hidden');
+        searchFeedbackText.textContent = `We couldn't find "${searchTerm}" in our current listings. Would you like to request this movie?`;
+        requestMovieBtn.classList.remove('hidden');
+        requestMovieBtn.dataset.searchTerm = searchTerm;
+    } else {
+        searchFeedback.classList.add('hidden');
+        requestMovieBtn.classList.add('hidden');
+    }
+}
+
+// ===== MOVIE REQUEST FUNCTIONS =====
+function openMovieRequestModal(movieTitle = '') {
+    document.getElementById('requestMovieTitle').value = movieTitle;
+    document.getElementById('requestMovieType').value = 'released';
+    document.getElementById('requestMovieComments').value = '';
+    document.getElementById('movieRequestModal').classList.remove('hidden');
+}
+
+function closeMovieRequestModal() {
+    document.getElementById('movieRequestModal').classList.add('hidden');
+}
+
+function submitMovieRequest() {
+    const title = document.getElementById('requestMovieTitle').value.trim();
+    const type = document.getElementById('requestMovieType').value;
+    const comments = document.getElementById('requestMovieComments').value.trim();
+    
+    if (!title) {
+        alert('Please enter a movie title');
+        return;
+    }
+    
+    // Get existing requests
+    let movieRequests = JSON.parse(localStorage.getItem('movieRequests') || '[]');
+    
+    // Check if already requested
+    if (movieRequests.some(r => r.title.toLowerCase() === title.toLowerCase() && r.status === 'pending')) {
+        alert('This movie has already been requested!');
+        return;
+    }
+    
+    const request = {
+        id: Date.now(),
+        title: title,
+        type: type,
+        comments: comments,
+        requestDate: getCurrentDateTime(),
+        status: 'pending'
+    };
+    
+    movieRequests.push(request);
+    localStorage.setItem('movieRequests', JSON.stringify(movieRequests));
+    
+    closeMovieRequestModal();
+    
+    // Show appropriate message based on type
+    if (type === 'upcoming') {
+        alert(`Thank you for your request!\n\n"${title}" is not yet available in theaters. We'll add it to our catalog when it's released and notify you!`);
+    } else {
+        alert(`Thank you for your request!\n\nWe've forwarded "${title}" to our admin team for review. We'll work on adding it to our catalog soon!`);
+    }
+    
+    // Clear search feedback
+    document.getElementById('searchFeedback').classList.add('hidden');
+    document.getElementById('searchBox').value = '';
+}
+
+// ===== EVENT LISTENERS =====
+
+// Modal close buttons
+document.getElementById('closeModal').addEventListener('click', closeModal);
+document.getElementById('closeTicketHistoryModal').addEventListener('click', () => {
+    document.getElementById('ticketHistoryModal').classList.add('hidden');
+});
+document.getElementById('closeElectronicTicketModal').addEventListener('click', () => {
+    document.getElementById('electronicTicketModal').classList.add('hidden');
+});
+
+// Ticket and review buttons
+document.getElementById('viewTicketsBtn').addEventListener('click', displayTicketHistory);
+document.getElementById('submitReviewBtn').addEventListener('click', submitReview);
+document.getElementById('buyTicketBtn').addEventListener('click', showTicketPurchaseSection);
+document.getElementById('proceedToPaymentBtn').addEventListener('click', proceedToPayment);
+document.getElementById('backToTicketsBtn').addEventListener('click', backToTicketSelection);
+document.getElementById('closeTicketAndViewHistory').addEventListener('click', () => {
+    document.getElementById('electronicTicketModal').classList.add('hidden');
+    displayTicketHistory();
+});
+
+// Payment buttons
+document.querySelectorAll('.paymentBtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        processPayment(btn.dataset.method);
+    });
+});
+
+// Search functionality
+document.getElementById('searchBox').addEventListener('input', (e) => {
+    searchMovies(e.target.value);
+});
+
+// Movie request functionality
+document.getElementById('requestMovieBtn').addEventListener('click', () => {
+    const searchTerm = document.getElementById('requestMovieBtn').dataset.searchTerm || '';
+    openMovieRequestModal(searchTerm);
+});
+
+document.getElementById('closeMovieRequestModal').addEventListener('click', closeMovieRequestModal);
+document.getElementById('submitMovieRequestBtn').addEventListener('click', submitMovieRequest);
+
+// ===== INITIALIZE APP =====
+populateTheaterSelect();
+populateShowtimeSelect();
+renderMovies(currentMoviesData, 'currentMovies', true, true);
+renderMovies(upcomingMoviesData, 'upcomingMovies', true, false);
+
+</script>
+</body>
+</html>

@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Profile - ReelDeal Cinema</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+* { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+min-height: 100vh;
+background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+position: relative;
+color: white;
+}
+
+body::before {
+content: '';
+position: absolute;
+top: 0; left: 0; right: 0; bottom: 0;
+background:
+radial-gradient(circle at 20% 50%, rgba(120,119,198,0.3) 0%, transparent 50%),
+radial-gradient(circle at 80% 80%, rgba(255,138,101,0.3) 0%, transparent 50%),
+radial-gradient(circle at 40% 20%, rgba(74,144,226,0.3) 0%, transparent 50%);
+pointer-events: none;
+z-index: 0;
+}
+
+.container {
+position: relative;
+z-index: 10;
+max-width: 900px;
+margin: 0 auto;
+padding: 2rem;
+}
+
+.profile-card {
+background: rgba(255, 255, 255, 0.05);
+backdrop-filter: blur(20px);
+border-radius: 2rem;
+border: 1px solid rgba(255, 255, 255, 0.2);
+box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+padding: 2rem;
+margin-bottom: 2rem;
+animation: fadeIn 0.8s ease-in;
+}
+
+.profile-header {
+display: flex;
+align-items: center;
+gap: 2rem;
+margin-bottom: 2rem;
+padding-bottom: 2rem;
+border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+.avatar {
+width: 100px;
+height: 100px;
+border-radius: 50%;
+background: linear-gradient(135deg, #4a90e2, #ff8a65);
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 2.5rem;
+font-weight: bold;
+color: white;
+box-shadow: 0 8px 20px rgba(74,144,226,0.5);
+flex-shrink: 0;
+}
+
+.profile-info h1 {
+font-size: 2rem;
+font-weight: 800;
+background: linear-gradient(135deg, #4a90e2, #ff8a65);
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
+margin-bottom: 0.5rem;
+}
+
+.profile-info p {
+color: rgba(255,255,255,0.7);
+font-size: 0.9rem;
+}
+
+.form-section {
+margin-bottom: 2rem;
+}
+
+.form-section h2 {
+font-size: 1.3rem;
+font-weight: 700;
+margin-bottom: 1rem;
+color: #4a90e2;
+}
+
+.form-grid {
+display: grid;
+grid-template-columns: 1fr;
+gap: 1rem;
+}
+
+@media (min-width: 640px) {
+.form-grid {
+grid-template-columns: 1fr 1fr;
+}
+.form-grid.single {
+grid-template-columns: 1fr;
+}
+}
+
+.form-group {
+display: flex;
+flex-direction: column;
+gap: 0.5rem;
+}
+
+label {
+font-size: 0.9rem;
+font-weight: 600;
+color: rgba(255,255,255,0.9);
+}
+
+input, textarea {
+width: 100%;
+padding: 0.75rem 1rem;
+font-size: 1rem;
+border-radius: 0.75rem;
+border: 1px solid rgba(255,255,255,0.2);
+background: rgba(255,255,255,0.1);
+color: white;
+backdrop-filter: blur(10px);
+transition: all 0.3s;
+}
+
+input:disabled {
+opacity: 0.6;
+cursor: not-allowed;
+}
+
+input::placeholder, textarea::placeholder {
+color: rgba(255, 255, 255, 0.5);
+}
+
+input:focus, textarea:focus {
+outline: none;
+box-shadow: 0 0 15px #4a90e2;
+border: 2px solid #4a90e2;
+}
+
+textarea {
+resize: vertical;
+min-height: 80px;
+}
+
+.btn-primary {
+padding: 0.75rem 1.5rem;
+border-radius: 0.75rem;
+background: linear-gradient(135deg, #4a90e2, #ff8a65);
+border: none;
+color: white;
+font-weight: bold;
+cursor: pointer;
+transition: all 0.3s;
+box-shadow: 0 8px 20px rgba(74,144,226,0.5);
+}
+
+.btn-primary:hover:not(:disabled) {
+transform: translateY(-2px) scale(1.02);
+box-shadow: 0 15px 35px rgba(74,144,226,0.6);
+}
+
+.btn-primary:disabled {
+opacity: 0.6;
+cursor: not-allowed;
+}
+
+.btn-secondary {
+padding: 0.75rem 1.5rem;
+border-radius: 0.75rem;
+background: rgba(255,255,255,0.1);
+border: 1px solid rgba(255,255,255,0.3);
+color: white;
+font-weight: 600;
+cursor: pointer;
+transition: all 0.3s;
+text-decoration: none;
+display: inline-block;
+}
+
+.btn-secondary:hover {
+background: rgba(255,255,255,0.2);
+transform: translateY(-2px);
+}
+
+.btn-danger {
+padding: 0.75rem 1.5rem;
+border-radius: 0.75rem;
+background: linear-gradient(135deg, #e74c3c, #c0392b);
+border: none;
+color: white;
+font-weight: bold;
+cursor: pointer;
+transition: all 0.3s;
+box-shadow: 0 8px 20px rgba(231,76,60,0.5);
+}
+
+.btn-danger:hover {
+transform: translateY(-2px) scale(1.02);
+box-shadow: 0 15px 35px rgba(231,76,60,0.6);
+}
+
+.button-group {
+display: flex;
+gap: 1rem;
+margin-top: 2rem;
+flex-wrap: wrap;
+}
+
+#successMessage, #errorMessage, #warningMessage {
+border-radius: 1rem;
+text-align: center;
+padding: 0.75rem;
+margin-bottom: 1rem;
+animation: slideDown 0.3s ease-out;
+}
+
+#successMessage { background: rgba(0,128,0,0.5); color: #b6f6b6; }
+#errorMessage { background: rgba(255,0,0,0.5); color: #ffb6b6; }
+#warningMessage { background: rgba(255,165,0,0.5); color: #ffe4b3; }
+
+.hidden { display: none !important; }
+
+.info-badge {
+display: inline-block;
+padding: 0.25rem 0.75rem;
+border-radius: 0.5rem;
+font-size: 0.75rem;
+font-weight: 600;
+background: rgba(74,144,226,0.3);
+border: 1px solid rgba(74,144,226,0.5);
+margin-left: 0.5rem;
+}
+
+.admin-badge {
+background: rgba(138,43,226,0.3);
+border: 1px solid rgba(138,43,226,0.5);
+}
+
+.loading-overlay {
+position: fixed;
+top: 0;
+left: 0;
+right: 0;
+bottom: 0;
+background: rgba(0,0,0,0.7);
+backdrop-filter: blur(5px);
+display: flex;
+align-items: center;
+justify-content: center;
+z-index: 1000;
+}
+
+.loading-spinner {
+width: 60px;
+height: 60px;
+border: 4px solid rgba(255,255,255,0.3);
+border-top: 4px solid white;
+border-radius: 50%;
+animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+from { opacity: 0; transform: translateY(20px); }
+to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+from { opacity: 0; transform: translateY(-10px); }
+to { opacity: 1; transform: translateY(0); }
+}
+
+.back-link {
+display: inline-flex;
+align-items: center;
+gap: 0.5rem;
+color: rgba(255,255,255,0.8);
+text-decoration: none;
+font-weight: 600;
+margin-bottom: 1.5rem;
+transition: all 0.3s;
+}
+
+.back-link:hover {
+color: #4a90e2;
+transform: translateX(-5px);
+}
+
+.error-details {
+background: rgba(255,255,255,0.1);
+border-radius: 0.5rem;
+padding: 0.75rem;
+margin-top: 0.5rem;
+font-size: 0.85rem;
+font-family: monospace;
+color: rgba(255,255,255,0.8);
+max-height: 100px;
+overflow-y: auto;
+}
+
+@media (max-width: 640px) {
+.profile-header {
+flex-direction: column;
+text-align: center;
+}
+.button-group {
+flex-direction: column;
+}
+.button-group button,
+.button-group a {
+width: 100%;
+}
+}
+</style>
+</head>
+<body>
+<div class="container">
+<a href="Home_Screen.html" class="back-link">
+← Back to Home
+</a>
+
+<div class="profile-card">
+<div class="profile-header">
+<div class="avatar" id="avatarInitial">U</div>
+<div class="profile-info">
+<h1 id="profileName">Loading...</h1>
+<p id="profileEmail">email@example.com</p>
+<p style="font-size: 0.8rem; margin-top: 0.25rem;">
+Member since: <span id="memberSince">...</span>
+<span id="accountTypeBadge" class="info-badge">User</span>
+</p>
+</div>
+</div>
+
+<div id="successMessage" class="hidden"></div>
+<div id="errorMessage" class="hidden"></div>
+<div id="warningMessage" class="hidden"></div>
+
+<form id="profileForm">
+<!-- Personal Information Section -->
+<div class="form-section">
+<h2>Personal Information</h2>
+<div class="form-grid">
+<div class="form-group">
+<label for="name">Full Name *</label>
+<input type="text" id="name" required>
+</div>
+<div class="form-group">
+<label for="email">Email Address</label>
+<input type="email" id="email" disabled>
+</div>
+<div class="form-group">
+<label for="phone">Phone Number</label>
+<input type="tel" id="phone" placeholder="+1 (555) 123-4567">
+</div>
+<div class="form-group">
+<label for="address">Address</label>
+<input type="text" id="address" placeholder="123 Main St, City, State">
+</div>
+</div>
+</div>
+
+<!-- Password Change Section -->
+<div class="form-section">
+<h2>Change Password</h2>
+<div class="form-grid single">
+<div class="form-group">
+<label for="currentPassword">Current Password</label>
+<input type="password" id="currentPassword" placeholder="Enter current password">
+</div>
+<div class="form-group">
+<label for="newPassword">New Password</label>
+<input type="password" id="newPassword" placeholder="Enter new password (min 6 characters)">
+</div>
+<div class="form-group">
+<label for="confirmPassword">Confirm New Password</label>
+<input type="password" id="confirmPassword" placeholder="Confirm new password">
+</div>
+</div>
+<p style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-top: 0.5rem;">
+Leave password fields empty if you don't want to change your password
+</p>
+</div>
+
+<div class="button-group">
+<button type="submit" class="btn-primary" id="saveBtn">💾 Save Changes</button>
+<a href="Home_Screen.html" class="btn-secondary">❌ Cancel</a>
+<button type="button" id="logoutBtn" class="btn-danger">🚪 Logout</button>
+</div>
+</form>
+</div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="loading-overlay hidden">
+<div class="loading-spinner"></div>
+</div>
+
+<script>
+// =============================================
+// ERROR HANDLING UTILITIES
+// =============================================
+
+const ErrorHandler = {
+showLoading() {
+document.getElementById('loadingOverlay').classList.remove('hidden');
+},
+
+hideLoading() {
+document.getElementById('loadingOverlay').classList.add('hidden');
+},
+
+showError(message, details = null) {
+const errorBox = document.getElementById("errorMessage");
+errorBox.innerHTML = `
+<div>${message}</div>
+${details ? `<div class="error-details">${details}</div>` : ''}
+`;
+errorBox.classList.remove("hidden");
+document.getElementById("successMessage").classList.add("hidden");
+document.getElementById("warningMessage").classList.add("hidden");
+window.scrollTo({ top: 0, behavior: 'smooth' });
+setTimeout(() => errorBox.classList.add("hidden"), 8000);
+},
+
+showSuccess(message) {
+const successBox = document.getElementById("successMessage");
+successBox.textContent = message;
+successBox.classList.remove("hidden");
+document.getElementById("errorMessage").classList.add("hidden");
+document.getElementById("warningMessage").classList.add("hidden");
+window.scrollTo({ top: 0, behavior: 'smooth' });
+setTimeout(() => successBox.classList.add("hidden"), 5000);
+},
+
+showWarning(message) {
+const warningBox = document.getElementById("warningMessage");
+warningBox.textContent = message;
+warningBox.classList.remove("hidden");
+document.getElementById("errorMessage").classList.add("hidden");
+document.getElementById("successMessage").classList.add("hidden");
+window.scrollTo({ top: 0, behavior: 'smooth' });
+setTimeout(() => warningBox.classList.add("hidden"), 6000);
+},
+
+handleDatabaseError(error, context = 'database operation') {
+console.error(`Database error during ${context}:`, error);
+this.showError(
+`Failed to ${context}. Please try again.`,
+`Error: ${error.message || 'Unknown error'}`
+);
+return false;
+},
+
+handleStorageError(error, context = 'storage operation') {
+console.error(`Storage error during ${context}:`, error);
+if (error.name === 'QuotaExceededError') {
+this.showError(
+'Storage quota exceeded. Please clear some data.',
+'Your browser storage is full. Try clearing browser data or using a different browser.'
+);
+} else {
+this.showError(
+`Failed to ${context}. Please check your browser settings.`,
+`Error: ${error.message || 'Unknown error'}`
+);
+}
+return false;
+},
+
+handleNetworkError(error, context = 'network request') {
+console.error(`Network error during ${context}:`, error);
+this.showError(
+'Network connection error. Please check your internet connection.',
+'Unable to connect to the server. Please try again later.'
+);
+return false;
+},
+
+async withErrorHandling(fn, context = 'operation') {
+try {
+this.showLoading();
+const result = await fn();
+return { success: true, data: result };
+} catch (error) {
+console.error(`Error during ${context}:`, error);
+this.handleDatabaseError(error, context);
+return { success: false, error };
+} finally {
+this.hideLoading();
+}
+}
+};
+
+// =============================================
+// SQL DATABASE IMPLEMENTATION
+// =============================================
+
+let db = null;
+let currentUser = null;
+
+// Initialize SQL.js database with error handling
+async function initDatabase() {
+try {
+ErrorHandler.showLoading();
+
+const SQL = await initSqlJs({
+locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
+});
+
+const savedDb = localStorage.getItem('reeldeal_database');
+if (savedDb) {
+try {
+const uint8Array = new Uint8Array(JSON.parse(savedDb));
+db = new SQL.Database(uint8Array);
+console.log('Database loaded from storage');
+} catch (parseError) {
+console.error('Failed to parse saved database:', parseError);
+ErrorHandler.showWarning('Database corrupted. Please re-register if you encounter issues.');
+db = new SQL.Database();
+}
+} else {
+console.error('No database found');
+ErrorHandler.showWarning('No database found. Please register or log in first.');
+return false;
+}
+
+ErrorHandler.hideLoading();
+return true;
+} catch (error) {
+ErrorHandler.hideLoading();
+return ErrorHandler.handleDatabaseError(error, 'initialize database');
+}
+}
+
+// Save database to localStorage with error handling
+function saveDatabase() {
+try {
+const data = db.export();
+const buffer = Array.from(data);
+localStorage.setItem('reeldeal_database', JSON.stringify(buffer));
+return true;
+} catch (error) {
+return ErrorHandler.handleStorageError(error, 'save database');
+}
+}
+
+// Get user by ID with error handling
+function getUserById(userId) {
+try {
+if (!db) {
+throw new Error('Database not initialized');
+}
+
+const stmt = db.prepare('SELECT * FROM users WHERE user_id = ?');
+stmt.bind([userId]);
+if (stmt.step()) {
+const row = stmt.getAsObject();
+stmt.free();
+return {
+userId: row.user_id,
+name: row.name,
+email: row.email,
+phone: row.phone,
+address: row.address,
+passwordHash: row.password_hash,
+accountType: row.account_type,
+signupDate: row.signup_date
+};
+}
+stmt.free();
+return null;
+} catch (error) {
+ErrorHandler.handleDatabaseError(error, 'retrieve user data');
+return null;
+}
+}
+
+// Update user profile with error handling
+function updateUserProfile(userId, name, phone, address) {
+try {
+if (!db) {
+throw new Error('Database not initialized');
+}
+
+db.run(`
+UPDATE users
+SET name = ?, phone = ?, address = ?
+WHERE user_id = ?
+`, [name, phone || null, address || null, userId]);
+
+return saveDatabase();
+} catch (error) {
+return ErrorHandler.handleDatabaseError(error, 'update profile');
+}
+}
+
+// Update user password with error handling
+function updateUserPassword(userId, newPasswordHash) {
+try {
+if (!db) {
+throw new Error('Database not initialized');
+}
+
+db.run(`
+UPDATE users
+SET password_hash = ?
+WHERE user_id = ?
+`, [newPasswordHash, userId]);
+
+return saveDatabase();
+} catch (error) {
+return ErrorHandler.handleDatabaseError(error, 'update password');
+}
+}
+
+// =============================================
+// UTILITY FUNCTIONS
+// =============================================
+
+function hashPassword(password) {
+try {
+return CryptoJS.SHA256(password).toString();
+} catch (error) {
+ErrorHandler.showError('Failed to hash password. Please try again.');
+throw error;
+}
+}
+
+function formatDate(dateString) {
+try {
+const date = new Date(dateString);
+if (isNaN(date.getTime())) {
+return 'Invalid date';
+}
+return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+} catch (error) {
+console.error('Date formatting error:', error);
+return 'Unknown date';
+}
+}
+
+// =============================================
+// LOAD USER PROFILE
+// =============================================
+
+async function loadProfile() {
+try {
+ErrorHandler.showLoading();
+
+// Check if user is logged in
+const sessionData = localStorage.getItem('currentUser');
+if (!sessionData) {
+ErrorHandler.hideLoading();
+alert('Please log in to view your profile');
+window.location.href = 'login.html';
+return;
+}
+
+try {
+currentUser = JSON.parse(sessionData);
+} catch (parseError) {
+ErrorHandler.hideLoading();
+ErrorHandler.showError('Session data corrupted. Please log in again.');
+localStorage.removeItem('currentUser');
+setTimeout(() => window.location.href = 'login.html', 2000);
+return;
+}
+
+// Initialize database
+const initialized = await initDatabase();
+if (!initialized) {
+ErrorHandler.showError('Failed to load database. Please try refreshing the page.');
+return;
+}
+
+// Get user data from database
+const user = getUserById(currentUser.userId);
+if (!user) {
+ErrorHandler.hideLoading();
+ErrorHandler.showError('User data not found. Please log in again.');
+setTimeout(() => window.location.href = 'login.html', 2000);
+return;
+}
+
+// Populate profile header
+document.getElementById('profileName').textContent = user.name || 'Unknown User';
+document.getElementById('profileEmail').textContent = user.email || 'No email';
+document.getElementById('memberSince').textContent = formatDate(user.signupDate);
+document.getElementById('avatarInitial').textContent = (user.name || 'U').charAt(0).toUpperCase();
+
+// Set account type badge
+const badge = document.getElementById('accountTypeBadge');
+if (user.accountType === 'admin') {
+badge.textContent = 'Admin';
+badge.classList.add('admin-badge');
+} else {
+badge.textContent = 'User';
+}
+
+// Populate form fields
+document.getElementById('name').value = user.name || '';
+document.getElementById('email').value = user.email || '';
+document.getElementById('phone').value = user.phone || '';
+document.getElementById('address').value = user.address || '';
+
+ErrorHandler.hideLoading();
+} catch (error) {
+ErrorHandler.hideLoading();
+ErrorHandler.showError('Failed to load profile. Please try again.', error.message);
+console.error('Profile loading error:', error);
+}
+}
+
+// =============================================
+// FORM SUBMISSION
+// =============================================
+
+document.getElementById('profileForm').addEventListener('submit', async function(e) {
+e.preventDefault();
+
+try {
+// Disable submit button
+const saveBtn = document.getElementById('saveBtn');
+saveBtn.disabled = true;
+
+ErrorHandler.showLoading();
+
+const name = document.getElementById('name').value.trim();
+const phone = document.getElementById('phone').value.trim();
+const address = document.getElementById('address').value.trim();
+const currentPassword = document.getElementById('currentPassword').value;
+const newPassword = document.getElementById('newPassword').value;
+const confirmPassword = document.getElementById('confirmPassword').value;
+
+// Validate name
+if (!name) {
+throw new Error('Name is required');
+}
+
+if (name.length < 2) {
+throw new Error('Name must be at least 2 characters long');
+}
+
+// Get current user data
+const user = getUserById(currentUser.userId);
+if (!user) {
+throw new Error('User data not found');
+}
+
+// Check if password change is requested
+let passwordChanged = false;
+if (currentPassword || newPassword || confirmPassword) {
+// All password fields must be filled
+if (!currentPassword || !newPassword || !confirmPassword) {
+throw new Error('Please fill all password fields to change your password');
+}
+
+// Verify current password
+const currentHash = hashPassword(currentPassword);
+if (currentHash !== user.passwordHash) {
+throw new Error('Current password is incorrect');
+}
+
+// Validate new password
+if (newPassword.length < 6) {
+throw new Error('New password must be at least 6 characters long');
+}
+
+// Check if passwords match
+if (newPassword !== confirmPassword) {
+throw new Error('New passwords do not match');
+}
+
+// Check if new password is different from current
+if (currentPassword === newPassword) {
+throw new Error('New password must be different from current password');
+}
+
+// Update password
+const newHash = hashPassword(newPassword);
+if (!updateUserPassword(currentUser.userId, newHash)) {
+throw new Error('Failed to update password');
+}
+passwordChanged = true;
+}
+
+// Update profile information
+if (!updateUserProfile(currentUser.userId, name, phone, address)) {
+throw new Error('Failed to update profile');
+}
+
+// Update session data
+currentUser.name = name;
+try {
+localStorage.setItem('currentUser', JSON.stringify(currentUser));
+} catch (storageError) {
+ErrorHandler.handleStorageError(storageError, 'update session');
+}
+
+// Clear password fields
+document.getElementById('currentPassword').value = '';
+document.getElementById('newPassword').value = '';
+document.getElementById('confirmPassword').value = '';
+
+ErrorHandler.hideLoading();
+
+// Show success message
+const message = passwordChanged 
+? '✅ Profile and password updated successfully!' 
+: '✅ Profile updated successfully!';
+ErrorHandler.showSuccess(message);
+
+// Reload profile data
+setTimeout(() => loadProfile(), 500);
+
+} catch (error) {
+ErrorHandler.hideLoading();
+ErrorHandler.showError(error.message);
+console.error('Form submission error:', error);
+} finally {
+// Re-enable submit button
+document.getElementById('saveBtn').disabled = false;
+}
+});
+
+// =============================================
+// LOGOUT HANDLER
+// =============================================
+
+document.getElementById('logoutBtn').addEventListener('click', function() {
+if (confirm('Are you sure you want to logout?')) {
+try {
+localStorage.removeItem('currentUser');
+window.location.href = 'login.html';
+} catch (error) {
+ErrorHandler.showError('Failed to logout properly. Redirecting anyway...');
+setTimeout(() => window.location.href = 'login.html', 1500);
+}
+}
+});
+
+// =============================================
+// INITIALIZE ON PAGE LOAD
+// =============================================
+
+window.addEventListener('DOMContentLoaded', loadProfile);
+
+// Handle page visibility changes
+document.addEventListener('visibilitychange', function() {
+if (!document.hidden && currentUser) {
+// Reload profile when page becomes visible again
+loadProfile().catch(error => {
+console.error('Failed to reload profile:', error);
+});
+}
+});
+
+// Handle online/offline events
+window.addEventListener('online', function() {
+ErrorHandler.showSuccess('✅ Connection restored');
+});
+
+window.addEventListener('offline', function() {
+ErrorHandler.showWarning('⚠️ No internet connection. Some features may not work.');
+});
+
+</script>
+
+</body>
+</html>

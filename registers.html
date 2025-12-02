@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Register - ReelDeal Cinema</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+* { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+min-height: 100vh;
+background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+position: relative;
+display: flex;
+align-items: center;
+justify-content: center;
+color: white;
+}
+
+body::before {
+content: '';
+position: absolute;
+top: 0; left: 0; right: 0; bottom: 0;
+background:
+radial-gradient(circle at 20% 50%, rgba(120,119,198,0.3) 0%, transparent 50%),
+radial-gradient(circle at 80% 80%, rgba(255,138,101,0.3) 0%, transparent 50%),
+radial-gradient(circle at 40% 20%, rgba(74,144,226,0.3) 0%, transparent 50%);
+pointer-events: none;
+z-index: 0;
+}
+
+.register-card {
+position: relative;
+z-index: 10;
+width: 100%;
+max-width: 500px;
+padding: 3rem;
+background: rgba(255, 255, 255, 0.05);
+backdrop-filter: blur(20px);
+border-radius: 2rem;
+border: 1px solid rgba(255, 255, 255, 0.2);
+box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+animation: fadeIn 0.8s ease-in;
+}
+
+.register-card h1 {
+font-size: 2.5rem;
+font-weight: 800;
+text-align: center;
+margin-bottom: 1rem;
+background: linear-gradient(135deg, #4a90e2, #ff8a65);
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
+}
+
+.register-card p {
+text-align: center;
+margin-bottom: 2rem;
+color: rgba(255,255,255,0.8);
+}
+
+form#registerForm {
+display: flex;
+flex-direction: column;
+gap: 1.25rem;
+}
+
+input, textarea, select {
+width: 100%;
+padding: 0.75rem 1rem;
+font-size: 1rem;
+border-radius: 1rem;
+border: none;
+background: rgba(255,255,255,0.15);
+color: white;
+backdrop-filter: blur(10px);
+transition: all 0.3s;
+}
+
+input::placeholder, textarea::placeholder {
+color: rgba(255, 255, 255, 0.6);
+}
+
+select { color: white; }
+select option { color: black; background-color: white; }
+
+input:focus, textarea:focus, select:focus {
+outline: none;
+box-shadow: 0 0 15px #4a90e2;
+border: 2px solid #4a90e2;
+}
+
+.btn-gradient {
+width: 100%;
+padding: 0.75rem;
+border-radius: 1rem;
+background: linear-gradient(135deg, #4a90e2, #ff8a65);
+border: none;
+color: white;
+font-weight: bold;
+cursor: pointer;
+transition: all 0.3s;
+box-shadow: 0 8px 20px rgba(74,144,226,0.5);
+}
+
+.btn-gradient:hover {
+transform: translateY(-2px) scale(1.02);
+box-shadow: 0 15px 35px rgba(74,144,226,0.6);
+}
+
+#successMessage, #errorMessage {
+border-radius: 1rem;
+text-align: center;
+padding: 0.75rem;
+margin-bottom: 1rem;
+}
+
+#successMessage { background: rgba(0,128,0,0.5); color: #b6f6b6; }
+#errorMessage { background: rgba(255,0,0,0.5); color: #ffb6b6; }
+
+.loading {
+display: inline-block;
+width: 20px;
+height: 20px;
+border: 3px solid rgba(255,255,255,.3);
+border-radius: 50%;
+border-top-color: #fff;
+animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+from { opacity: 0; transform: translateY(20px); }
+to { opacity: 1; transform: translateY(0); }
+}
+</style>
+</head>
+<body>
+
+<div class="register-card">
+<h1>Create Account</h1>
+<p>Sign up to start booking your favorite movies</p>
+
+<div id="successMessage" class="hidden">Account created successfully! Redirecting...</div>
+<div id="errorMessage" class="hidden"></div>
+
+<form id="registerForm">
+<input type="text" id="name" placeholder="Full Name" required>
+<input type="email" id="email" placeholder="Email" required>
+<input type="tel" id="phone" placeholder="Phone (555-123-4567)" maxlength="12" required>
+<textarea id="address" placeholder="Home Address" rows="3" required></textarea>
+<input type="password" id="password" placeholder="Password (min 6 chars)" required minlength="6">
+<input type="password" id="confirmPassword" placeholder="Confirm Password" required>
+<select id="accountType">
+<option value="user">Regular User (default)</option>
+<option value="admin">Admin (requires code)</option>
+</select>
+<input type="password" id="adminCode" placeholder="Admin Code" class="hidden">
+
+<button type="submit" class="btn-gradient">Create Account</button>
+</form>
+
+<p class="mt-6 text-center text-sm text-white/70">
+Already have an account? <a href="login.html" class="text-white underline hover:text-indigo-200">Login here</a>
+</p>
+</div>
+
+<footer style="text-align:center;padding:1rem;color:#aaa;font-size:0.85rem;position:absolute;bottom:0;width:100%;">
+© 2025 ReelDeal Cinema. All rights reserved.
+</footer>
+
+<script>
+// =============================================
+// SQL DATABASE IMPLEMENTATION
+// =============================================
+
+let db = null;
+
+// Initialize SQL.js database
+async function initDatabase() {
+try {
+const SQL = await initSqlJs({
+locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
+});
+
+// Check if database exists in memory
+const savedDb = localStorage.getItem('reeldeal_database');
+if (savedDb) {
+// Load existing database
+const uint8Array = new Uint8Array(JSON.parse(savedDb));
+db = new SQL.Database(uint8Array);
+console.log('Database loaded from storage');
+} else {
+// Create new database
+db = new SQL.Database();
+createTables();
+console.log('New database created');
+}
+return true;
+} catch (error) {
+console.error('Database initialization error:', error);
+return false;
+}
+}
+
+// Create database tables
+function createTables() {
+db.run(`
+CREATE TABLE IF NOT EXISTS users (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+user_id TEXT UNIQUE NOT NULL,
+name TEXT NOT NULL,
+email TEXT UNIQUE NOT NULL,
+phone TEXT NOT NULL,
+address TEXT NOT NULL,
+password_hash TEXT NOT NULL,
+account_type TEXT NOT NULL DEFAULT 'user',
+signup_date TEXT NOT NULL,
+created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)
+`);
+
+db.run(`
+CREATE TABLE IF NOT EXISTS purchase_history (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+user_id TEXT NOT NULL,
+movie_title TEXT NOT NULL,
+purchase_date TEXT NOT NULL,
+amount REAL NOT NULL,
+ticket_count INTEGER NOT NULL,
+FOREIGN KEY (user_id) REFERENCES users(user_id)
+)
+`);
+
+db.run(`
+CREATE TABLE IF NOT EXISTS reviews (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+user_id TEXT NOT NULL,
+movie_title TEXT NOT NULL,
+rating INTEGER NOT NULL,
+comment TEXT,
+review_date TEXT NOT NULL,
+FOREIGN KEY (user_id) REFERENCES users(user_id)
+)
+`);
+
+saveDatabase();
+}
+
+// Save database to memory
+function saveDatabase() {
+const data = db.export();
+const buffer = Array.from(data);
+localStorage.setItem('reeldeal_database', JSON.stringify(buffer));
+}
+
+// Insert new user into database
+function insertUser(userData) {
+try {
+const stmt = db.prepare(`
+INSERT INTO users (user_id, name, email, phone, address, password_hash, account_type, signup_date)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+`);
+stmt.run([
+userData.userId,
+userData.name,
+userData.email,
+userData.phone,
+userData.address,
+userData.passwordHash,
+userData.accountType,
+userData.signupDate
+]);
+stmt.free();
+saveDatabase();
+return true;
+} catch (error) {
+console.error('Insert error:', error);
+return false;
+}
+}
+
+// Check if email exists
+function emailExists(email) {
+try {
+const stmt = db.prepare('SELECT email FROM users WHERE email = ?');
+stmt.bind([email.toLowerCase()]);
+const result = stmt.step();
+stmt.free();
+return result;
+} catch (error) {
+console.error('Email check error:', error);
+return false;
+}
+}
+
+// Get user by email (for login compatibility)
+function getUserByEmail(email) {
+try {
+const stmt = db.prepare('SELECT * FROM users WHERE email = ?');
+stmt.bind([email.toLowerCase()]);
+if (stmt.step()) {
+const row = stmt.getAsObject();
+stmt.free();
+return row;
+}
+stmt.free();
+return null;
+} catch (error) {
+console.error('Get user error:', error);
+return null;
+}
+}
+
+// Get all users from database
+function getAllUsers() {
+try {
+const stmt = db.prepare('SELECT * FROM users');
+const users = [];
+while (stmt.step()) {
+const row = stmt.getAsObject();
+users.push({
+id: row.user_id,
+userId: row.user_id,
+name: row.name,
+email: row.email,
+phone: row.phone,
+address: row.address,
+passwordHash: row.password_hash,
+accountType: row.account_type,
+signupDate: row.signup_date,
+purchaseHistory: [],
+reviews: []
+});
+}
+stmt.free();
+return users;
+} catch (error) {
+console.error('Get all users error:', error);
+return [];
+}
+}
+
+// Export all users (for admin panel compatibility)
+function exportUsersToLocalStorage() {
+const users = getAllUsers();
+localStorage.setItem('registeredUsers', JSON.stringify(users));
+return users;
+}
+
+// Update user in database
+function updateUser(userId, updates) {
+try {
+const fields = [];
+const values = [];
+if (updates.name !== undefined) {
+fields.push('name = ?');
+values.push(updates.name);
+}
+if (updates.email !== undefined) {
+fields.push('email = ?');
+values.push(updates.email);
+}
+if (updates.phone !== undefined) {
+fields.push('phone = ?');
+values.push(updates.phone);
+}
+if (updates.address !== undefined) {
+fields.push('address = ?');
+values.push(updates.address);
+}
+if (updates.accountType !== undefined) {
+fields.push('account_type = ?');
+values.push(updates.accountType);
+}
+if (fields.length === 0) return false;
+values.push(userId);
+const sql = `UPDATE users SET ${fields.join(', ')} WHERE user_id = ?`;
+db.run(sql, values);
+saveDatabase();
+return true;
+} catch (error) {
+console.error('Update user error:', error);
+return false;
+}
+}
+
+// Delete user from database
+function deleteUser(userId) {
+try {
+db.run('DELETE FROM users WHERE user_id = ?', [userId]);
+db.run('DELETE FROM purchase_history WHERE user_id = ?', [userId]);
+db.run('DELETE FROM reviews WHERE user_id = ?', [userId]);
+saveDatabase();
+return true;
+} catch (error) {
+console.error('Delete user error:', error);
+return false;
+}
+}
+
+// Search users by query
+function searchUsers(query) {
+try {
+const stmt = db.prepare(`
+SELECT * FROM users
+WHERE name LIKE ? OR email LIKE ? OR phone LIKE ?
+`);
+const searchTerm = `%${query}%`;
+stmt.bind([searchTerm, searchTerm, searchTerm]);
+const users = [];
+while (stmt.step()) {
+const row = stmt.getAsObject();
+users.push({
+id: row.user_id,
+userId: row.user_id,
+name: row.name,
+email: row.email,
+phone: row.phone,
+address: row.address,
+passwordHash: row.password_hash,
+accountType: row.account_type,
+signupDate: row.signup_date,
+purchaseHistory: [],
+reviews: []
+});
+}
+stmt.free();
+return users;
+} catch (error) {
+console.error('Search users error:', error);
+return [];
+}
+}
+
+// Get user statistics
+function getUserStats() {
+try {
+const totalUsers = db.exec('SELECT COUNT(*) as count FROM users')[0].values[0][0];
+const totalAdmins = db.exec("SELECT COUNT(*) as count FROM users WHERE account_type = 'admin'")[0].values[0][0];
+const totalRegularUsers = totalUsers - totalAdmins;
+return {
+totalUsers,
+totalAdmins,
+totalRegularUsers
+};
+} catch (error) {
+console.error('Get stats error:', error);
+return { totalUsers: 0, totalAdmins: 0, totalRegularUsers: 0 };
+}
+}
+
+// Make database functions globally accessible for admin panel
+window.reelDealDB = {
+getAllUsers,
+updateUser,
+deleteUser,
+searchUsers,
+getUserStats,
+getUserByEmail,
+exportUsersToLocalStorage,
+saveDatabase
+};
+
+// =============================================
+// UTILITY FUNCTIONS
+// =============================================
+
+function hashPassword(password) {
+return CryptoJS.SHA256(password).toString();
+}
+
+function generateUserId() {
+return 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
+
+// =============================================
+// UI EVENT HANDLERS
+// =============================================
+
+// Auto-format phone number
+document.getElementById('phone').addEventListener('input', function(e) {
+let value = e.target.value.replace(/\D/g, '');
+if (value.length > 10) {
+value = value.slice(0, 10);
+}
+let formattedValue = '';
+if (value.length > 0) {
+formattedValue = value.substring(0, 3);
+}
+if (value.length >= 4) {
+formattedValue += '-' + value.substring(3, 6);
+}
+if (value.length >= 7) {
+formattedValue += '-' + value.substring(6, 10);
+}
+e.target.value = formattedValue;
+});
+
+// Admin code toggle
+document.getElementById('accountType').addEventListener('change', function() {
+document.getElementById('adminCode').classList.toggle('hidden', this.value !== 'admin');
+});
+
+// =============================================
+// FORM SUBMISSION
+// =============================================
+
+document.getElementById('registerForm').addEventListener('submit', async function(e) {
+e.preventDefault();
+
+const errorMessage = document.getElementById('errorMessage');
+const successMessage = document.getElementById('successMessage');
+errorMessage.classList.add('hidden');
+successMessage.classList.add('hidden');
+
+// Ensure database is initialized
+if (!db) {
+const initialized = await initDatabase();
+if (!initialized) {
+errorMessage.textContent = 'Database initialization failed. Please refresh the page.';
+errorMessage.classList.remove('hidden');
+return;
+}
+}
+
+const name = document.getElementById('name').value.trim();
+const email = document.getElementById('email').value.trim().toLowerCase();
+const phone = document.getElementById('phone').value.trim();
+const address = document.getElementById('address').value.trim();
+const password = document.getElementById('password').value;
+const confirmPassword = document.getElementById('confirmPassword').value;
+const accountType = document.getElementById('accountType').value;
+const adminCode = document.getElementById('adminCode').value.trim();
+
+// Validation
+if (password !== confirmPassword) {
+errorMessage.textContent = 'Passwords do not match!';
+errorMessage.classList.remove('hidden');
+return;
+}
+if (password.length < 6) {
+errorMessage.textContent = 'Password must be at least 6 characters!';
+errorMessage.classList.remove('hidden');
+return;
+}
+if (accountType === 'admin' && adminCode !== 'ADMIN2025') {
+errorMessage.textContent = 'Invalid admin code!';
+errorMessage.classList.remove('hidden');
+return;
+}
+
+const phonePattern = /^\d{3}-\d{3}-\d{4}$/;
+if (!phonePattern.test(phone)) {
+errorMessage.textContent = 'Phone number must be 10 digits (format: 555-123-4567)';
+errorMessage.classList.remove('hidden');
+return;
+}
+
+// Check for duplicate email in SQL database
+if (emailExists(email)) {
+errorMessage.textContent = 'Email already registered!';
+errorMessage.classList.remove('hidden');
+return;
+}
+
+// Create new user object
+const userId = generateUserId();
+const newUser = {
+userId: userId,
+name: name,
+email: email,
+phone: phone,
+address: address,
+passwordHash: hashPassword(password),
+accountType: accountType,
+signupDate: new Date().toISOString()
+};
+
+// Insert into SQL database
+const inserted = insertUser(newUser);
+if (!inserted) {
+errorMessage.textContent = 'Registration failed. Please try again.';
+errorMessage.classList.remove('hidden');
+return;
+}
+
+// Export to localStorage for backward compatibility
+exportUsersToLocalStorage();
+// Store user ID mapping for login
+localStorage.setItem(`user_email:${email}`, userId);
+
+// Success!
+successMessage.classList.remove('hidden');
+setTimeout(() => {
+if (accountType === 'admin') {
+window.location.href = 'admin.html';
+} else {
+window.location.href = 'login.html';
+}
+}, 2000);
+});
+
+// =============================================
+// INITIALIZE DATABASE ON PAGE LOAD
+// =============================================
+
+window.addEventListener('DOMContentLoaded', async function() {
+await initDatabase();
+});
+
+</script>
+
+</body>
+</html>

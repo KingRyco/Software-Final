@@ -1,0 +1,1710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReelDeal Cinema - Admin Panel</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/feather-icons"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+    * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        min-height: 100vh;
+        position: relative;
+        overflow-x: hidden;
+    }
+    body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: 
+            radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(255, 138, 101, 0.3) 0%, transparent 50%);
+        pointer-events: none;
+        z-index: 0;
+    }
+    .glass { 
+        background: rgba(255,255,255,0.95); 
+        backdrop-filter: blur(10px); 
+        border: 1px solid rgba(255,255,255,0.3); 
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+    .btn-primary { 
+        background: linear-gradient(135deg, #4a90e2 0%, #7877c6 100%); 
+        color:white; 
+        font-weight:bold; 
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+    }
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(74, 144, 226, 0.4);
+    }
+    .btn-success {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+    }
+    .btn-danger {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+    }
+    .stat-card {
+        background: linear-gradient(135deg, #4a90e2 0%, #7877c6 100%);
+        color: white;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        transition: transform 0.3s ease;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    table { 
+        border-collapse: collapse; 
+        width: 100%;
+        color: black;
+    }
+    th, td { 
+        border: 1px solid #ddd; 
+        padding: 12px; 
+        text-align: left;
+        vertical-align: top;
+    }
+    th { 
+        background: linear-gradient(135deg, #4a90e2 0%, #7877c6 100%);
+        color: white;
+        font-weight: 600;
+    }
+    tr:nth-child(even) {
+        background-color: #f8f9fa;
+    }
+    tr:hover {
+        background-color: #e8f0fe;
+    }
+    .fade-in {
+        animation: fadeIn 0.8s ease-in;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .btn-outline {
+        padding: 0.5rem 1rem;
+        margin: 0 0.25rem;
+        border-radius: 0.5rem;
+        background: white;
+        border: 2px solid #4a90e2;
+        color: #4a90e2;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .pagination-btn:hover {
+        background: #4a90e2;
+        color: white;
+    }
+    .pagination-btn.active {
+        background: #4a90e2;
+        color: white;
+    }
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.7);
+        backdrop-filter: blur(5px);
+    }
+    .modal.active {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .modal-content {
+        background: white;
+        padding: 2rem;
+        border-radius: 1rem;
+        max-width: 600px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    .chart-container {
+        position: relative;
+        height: 400px;
+        width: 100%;
+    }
+    .sync-notice {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+        text-align: center;
+        font-weight: 600;
+    }
+</style>
+</head>
+<body>
+
+<!-- Main Admin Panel -->
+<main id="adminPanel" class="container mx-auto px-4 py-8 relative z-10 fade-in">
+
+<header class="mb-8 text-center text-white">
+    <h1 class="text-5xl font-black mb-2">🎬 ReelDeal Cinema - Admin Panel</h1>
+    <p class="text-lg opacity-90">Comprehensive analytics and management</p>
+    <div class="sync-notice mt-4">
+        ✅ All changes sync automatically with the home screen
+    </div>
+</header>
+
+<nav class="flex flex-wrap justify-center gap-4 mb-12">
+    <button class="btn-primary px-6 py-3 rounded-xl" onclick="showSection('dashboard')">📊 Dashboard</button>
+    <button class="btn-primary px-6 py-3 rounded-xl" onclick="showSection('ticketHistory')">🎫 All Tickets</button>
+    <button class="btn-primary px-6 py-3 rounded-xl" onclick="showSection('movieRevenue')">💰 Movie Revenue</button>
+    <button class="btn-primary px-6 py-3 rounded-xl" onclick="showSection('theaterAnalytics')">🏢 Theater Analytics</button>
+    <button class="btn-primary px-6 py-3 rounded-xl" onclick="showSection('timeAnalytics')">⏰ Showtime Analytics</button>
+    <button class="btn-primary px-6 py-3 rounded-xl" onclick="showSection('manageTheaters')">🏪 Manage Theaters</button>
+    <button class="btn-primary px-6 py-3 rounded-xl" onclick="showSection('manageAdmins')">👑 Manage Admins</button>
+    <button class="btn-primary px-6 py-3 rounded-xl" onclick="showSection('registeredUsers')">👥 Registered Users</button>
+    <button class="btn-danger px-6 py-3 rounded-xl" onclick="window.location.href='login.html'">🚪 Logout</button>
+</nav>
+
+<!-- Dashboard Section -->
+<section id="dashboard" class="space-y-6">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-3xl font-bold text-white">📊 Dashboard Overview</h2>
+        <button onclick="exportData()" class="btn-success px-6 py-3 rounded-xl">📥 Export Report (CSV)</button>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="stat-card">
+            <div class="text-4xl mb-2">🎫</div>
+            <div class="text-3xl font-black" id="totalTickets">0</div>
+            <div class="text-sm opacity-90">Total Tickets Sold</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="text-4xl mb-2">💰</div>
+            <div class="text-3xl font-black">$<span id="totalRevenue">0.00</span></div>
+            <div class="text-sm opacity-90">Total Revenue</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="text-4xl mb-2">🎬</div>
+            <div class="text-3xl font-black" id="uniqueMovies">0</div>
+            <div class="text-sm opacity-90">Movies Sold</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="text-4xl mb-2">💳</div>
+            <div class="text-3xl font-black">$<span id="avgTicketPrice">0.00</span></div>
+            <div class="text-sm opacity-90">Avg Ticket Price</div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="glass p-6 rounded-xl shadow-lg">
+            <h3 class="text-2xl font-bold mb-4 text-gray-900">Revenue by Movie</h3>
+            <div class="chart-container">
+                <canvas id="movieRevenueChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="glass p-6 rounded-xl shadow-lg">
+            <h3 class="text-2xl font-bold mb-4 text-gray-900">Theater Performance</h3>
+            <div class="chart-container">
+                <canvas id="theaterChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="glass p-6 rounded-xl shadow-lg">
+            <h3 class="text-2xl font-bold mb-4 text-gray-900">Showtime Distribution</h3>
+            <div class="chart-container">
+                <canvas id="showtimeChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="glass p-6 rounded-xl shadow-lg">
+            <h3 class="text-2xl font-bold mb-4 text-gray-900">Payment Methods</h3>
+            <div class="chart-container">
+                <canvas id="paymentChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="glass p-6 rounded-xl shadow-lg">
+        <h3 class="text-2xl font-bold mb-4 text-gray-900">Top Performing Movies</h3>
+        <div id="topMovies" class="space-y-3"></div>
+    </div>
+</section>
+
+<!-- All Tickets Section -->
+<section id="ticketHistory" class="hidden space-y-6">
+    <h2 class="text-3xl font-bold text-white mb-6">🎫 Complete Ticket History</h2>
+    
+    <div class="flex flex-wrap gap-4 mb-4">
+        <input type="text" id="searchTicket" placeholder="Search by movie, theater, or ticket ID..." class="p-3 rounded-xl flex-1 min-w-[250px]">
+        <select id="filterTheaterTicket" class="p-3 rounded-xl">
+            <option value="">All Theaters</option>
+        </select>
+        <select id="filterShowtimeTicket" class="p-3 rounded-xl">
+            <option value="">All Showtimes</option>
+        </select>
+        <button class="btn-primary px-6 py-3 rounded-xl" onclick="renderTickets()">🔍 Search</button>
+        <button class="btn-primary px-6 py-3 rounded-xl" onclick="clearTicketFilters()">Clear</button>
+    </div>
+    
+    <div class="glass p-6 rounded-xl shadow-lg">
+        <div id="ticketHistoryContainer"></div>
+        <div id="ticketPagination" class="flex justify-center mt-6 flex-wrap"></div>
+    </div>
+</section>
+
+<!-- Movie Revenue Section -->
+<section id="movieRevenue" class="hidden space-y-6">
+    <h2 class="text-3xl font-bold text-white mb-6">💰 Movie Revenue Breakdown</h2>
+    
+    <div class="glass p-6 rounded-xl shadow-lg overflow-x-auto">
+        <div id="movieRevenueContainer"></div>
+    </div>
+</section>
+
+<!-- Theater Analytics Section -->
+<section id="theaterAnalytics" class="hidden space-y-6">
+    <h2 class="text-3xl font-bold text-white mb-6">🏢 Theater Analytics</h2>
+    
+    <div class="glass p-6 rounded-xl shadow-lg overflow-x-auto">
+        <div id="theaterAnalyticsContainer"></div>
+    </div>
+</section>
+
+<!-- Time Analytics Section -->
+<section id="timeAnalytics" class="hidden space-y-6">
+    <h2 class="text-3xl font-bold text-white mb-6">⏰ Showtime Analytics</h2>
+    
+    <div class="glass p-6 rounded-xl shadow-lg overflow-x-auto">
+        <div id="timeAnalyticsContainer"></div>
+    </div>
+</section>
+
+<!-- Manage Movies Section -->
+<section id="manageMovies" class="hidden space-y-6">
+    <h2 class="text-3xl font-bold text-white mb-6">🎥 Manage Movies</h2>
+    
+    <div class="glass p-6 rounded-xl shadow-lg mb-6">
+        <h3 class="text-xl font-bold mb-4 text-gray-900">Add New Movie</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input type="text" id="newMovieTitle" placeholder="Movie Title *" class="p-3 rounded-xl border-2 border-gray-300">
+            <input type="text" id="newMovieGenre" placeholder="Genre *" class="p-3 rounded-xl border-2 border-gray-300">
+            <input type="number" id="newMovieRating" placeholder="Rating (0-5) *" step="0.1" min="0" max="5" class="p-3 rounded-xl border-2 border-gray-300">
+            <input type="number" id="newMoviePrice" placeholder="Ticket Price *" step="0.01" min="0" class="p-3 rounded-xl border-2 border-gray-300">
+            <input type="text" id="newMovieImage" placeholder="Image URL *" class="p-3 rounded-xl border-2 border-gray-300 md:col-span-2">
+            <textarea id="newMovieSynopsis" placeholder="Synopsis" class="p-3 rounded-xl border-2 border-gray-300 md:col-span-2" rows="2"></textarea>
+            <input type="text" id="newMovieCast" placeholder="Cast (comma separated)" class="p-3 rounded-xl border-2 border-gray-300">
+            <input type="text" id="newMovieRuntime" placeholder="Runtime (e.g., 2h 30m)" class="p-3 rounded-xl border-2 border-gray-300">
+        </div>
+        <button onclick="addMovie()" class="btn-success px-6 py-3 rounded-xl mt-4">Add Movie</button>
+    </div>
+    
+    <div class="glass p-6 rounded-xl shadow-lg">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-gray-900">Current Movies</h3>
+            <input type="text" id="searchMovies" placeholder="Search movies..." class="p-2 rounded-lg border-2 border-gray-300 w-64" oninput="renderMoviesList()">
+        </div>
+        <div id="moviesListContainer" class="space-y-4"></div>
+    </div>
+</section>
+
+<!-- Manage Theaters Section -->
+<section id="manageTheaters" class="hidden space-y-6">
+    <h2 class="text-3xl font-bold text-white mb-6">🏪 Manage Theaters & Showtimes</h2>
+    
+    <div class="glass p-6 rounded-xl shadow-lg mb-6">
+        <h3 class="text-xl font-bold mb-4 text-gray-900">Add New Theater</h3>
+        <div class="flex gap-4">
+            <input type="text" id="newTheaterName" placeholder="Theater Name *" class="p-3 rounded-xl border-2 border-gray-300 flex-1">
+            <button onclick="addTheater()" class="btn-success px-6 py-3 rounded-xl">Add Theater</button>
+        </div>
+    </div>
+    
+    <div class="glass p-6 rounded-xl shadow-lg mb-6">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-gray-900">Current Theaters</h3>
+            <input type="text" id="searchTheaters" placeholder="Search theaters..." class="p-2 rounded-lg border-2 border-gray-300 w-64" oninput="renderTheatersList()">
+        </div>
+        <div id="theatersListContainer" class="space-y-3"></div>
+    </div>
+    
+    <div class="glass p-6 rounded-xl shadow-lg">
+        <h3 class="text-xl font-bold mb-4 text-gray-900">Add New Showtime</h3>
+        <div class="flex gap-4">
+            <input type="text" id="newShowtimeName" placeholder="Showtime Name (e.g., Late Night) *" class="p-3 rounded-xl border-2 border-gray-300 flex-1">
+            <input type="text" id="newShowtimeTime" placeholder="Time (e.g., 9:00 PM) *" class="p-3 rounded-xl border-2 border-gray-300 flex-1">
+            <button onclick="addShowtime()" class="btn-success px-6 py-3 rounded-xl">Add Showtime</button>
+        </div>
+    </div>
+    
+    <div class="glass p-6 rounded-xl shadow-lg mt-6">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-gray-900">Current Showtimes</h3>
+            <input type="text" id="searchShowtimes" placeholder="Search showtimes..." class="p-2 rounded-lg border-2 border-gray-300 w-64" oninput="renderShowtimesList()">
+        </div>
+        <div id="showtimesListContainer" class="space-y-3"></div>
+    </div>
+</section>
+
+<!-- Manage Admins Section -->
+<section id="manageAdmins" class="hidden space-y-6">
+    <h2 class="text-3xl font-bold text-white mb-6">👑 Manage Admins</h2>
+    
+    <div class="glass p-6 rounded-xl shadow-lg mb-6">
+        <h3 class="text-xl font-bold mb-4 text-gray-900">Promote User to Admin</h3>
+        <p class="text-sm text-gray-600 mb-4">Select a registered user to promote to admin status</p>
+        <div class="flex gap-4">
+            <select id="promoteUserSelect" class="p-3 rounded-xl border-2 border-gray-300 flex-1">
+                <option value="">Select a user to promote...</option>
+            </select>
+            <button onclick="promoteToAdmin()" class="btn-success px-6 py-3 rounded-xl">Promote to Admin</button>
+        </div>
+    </div>
+    
+    <div class="glass p-6 rounded-xl shadow-lg mb-6">
+        <h3 class="text-xl font-bold mb-4 text-gray-900">Create New Admin Account</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input type="text" id="newAdminName" placeholder="Full Name *" class="p-3 rounded-xl border-2 border-gray-300">
+            <input type="email" id="newAdminEmail" placeholder="Email *" class="p-3 rounded-xl border-2 border-gray-300">
+            <input type="password" id="newAdminPassword" placeholder="Password *" class="p-3 rounded-xl border-2 border-gray-300">
+            <input type="text" id="newAdminPhone" placeholder="Phone (optional)" class="p-3 rounded-xl border-2 border-gray-300">
+        </div>
+        <button onclick="addAdmin()" class="btn-success px-6 py-3 rounded-xl mt-4">Create Admin Account</button>
+    </div>
+    
+    <div class="glass p-6 rounded-xl shadow-lg">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-gray-900">Current Admins (<span id="adminCount">0</span>)</h3>
+            <input type="text" id="searchAdmins" placeholder="Search admins..." class="p-2 rounded-lg border-2 border-gray-300 w-64" oninput="renderAdminsList()">
+        </div>
+        <div id="adminsListContainer" class="space-y-4"></div>
+    </div>
+</section>
+
+<!-- Registered Users Section -->
+<section id="registeredUsers" class="hidden space-y-6">
+    <h2 class="text-3xl font-bold text-white mb-6">👥 Registered Users</h2>
+    
+    <div class="glass p-6 rounded-xl shadow-lg mb-6">
+        <h3 class="text-xl font-bold mb-4 text-gray-900">Add New User</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input type="text" id="newUserName" placeholder="Full Name *" class="p-3 rounded-xl border-2 border-gray-300">
+            <input type="email" id="newUserEmail" placeholder="Email *" class="p-3 rounded-xl border-2 border-gray-300">
+            <input type="password" id="newUserPassword" placeholder="Password *" class="p-3 rounded-xl border-2 border-gray-300">
+            <input type="text" id="newUserPhone" placeholder="Phone (optional)" class="p-3 rounded-xl border-2 border-gray-300">
+        </div>
+        <button onclick="addUser()" class="btn-success px-6 py-3 rounded-xl mt-4">Add User</button>
+    </div>
+    
+    <div class="glass p-6 rounded-xl shadow-lg">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-gray-900">Registered Users List</h3>
+            <input type="text" id="searchUsers" placeholder="Search users..." class="p-2 rounded-lg border-2 border-gray-300 w-64" oninput="renderUsersList()">
+        </div>
+        <div id="usersListContainer" class="space-y-4"></div>
+    </div>
+</section>
+
+</main>
+
+<!-- Edit Movie Modal -->
+<div id="editMovieModal" class="modal">
+    <div class="modal-content">
+        <h2 class="text-2xl font-bold mb-4">Edit Movie</h2>
+        <div class="space-y-4">
+            <input type="hidden" id="editMovieId">
+            <input type="text" id="editMovieTitle" placeholder="Movie Title *" class="w-full p-3 rounded-xl border-2 border-gray-300">
+            <input type="text" id="editMovieGenre" placeholder="Genre *" class="w-full p-3 rounded-xl border-2 border-gray-300">
+            <input type="number" id="editMovieRating" placeholder="Rating *" step="0.1" min="0" max="5" class="w-full p-3 rounded-xl border-2 border-gray-300">
+            <input type="number" id="editMoviePrice" placeholder="Price *" step="0.01" min="0" class="w-full p-3 rounded-xl border-2 border-gray-300">
+            <input type="text" id="editMovieImage" placeholder="Image URL *" class="w-full p-3 rounded-xl border-2 border-gray-300">
+            <textarea id="editMovieSynopsis" placeholder="Synopsis" class="w-full p-3 rounded-xl border-2 border-gray-300" rows="2"></textarea>
+            <input type="text" id="editMovieCast" placeholder="Cast" class="w-full p-3 rounded-xl border-2 border-gray-300">
+            <input type="text" id="editMovieRuntime" placeholder="Runtime" class="w-full p-3 rounded-xl border-2 border-gray-300">
+            <div class="flex gap-4 mt-4">
+                <button onclick="saveMovieEdit()" class="btn-success px-6 py-3 rounded-xl flex-1">Save</button>
+                <button onclick="closeEditModal()" class="btn-danger px-6 py-3 rounded-xl flex-1">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Theater Modal -->
+<div id="editTheaterModal" class="modal">
+    <div class="modal-content">
+        <h2 class="text-2xl font-bold mb-4">Edit Theater</h2>
+        <div class="space-y-4">
+            <input type="hidden" id="editTheaterId">
+            <input type="text" id="editTheaterName" placeholder="Theater Name *" class="w-full p-3 rounded-xl border-2 border-gray-300">
+            <div class="flex gap-4 mt-4">
+                <button onclick="saveTheaterEdit()" class="btn-success px-6 py-3 rounded-xl flex-1">Save</button>
+                <button onclick="closeTheaterModal()" class="btn-danger px-6 py-3 rounded-xl flex-1">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Showtime Modal -->
+<div id="editShowtimeModal" class="modal">
+    <div class="modal-content">
+        <h2 class="text-2xl font-bold mb-4">Edit Showtime</h2>
+        <div class="space-y-4">
+            <input type="hidden" id="editShowtimeId">
+            <input type="text" id="editShowtimeName" placeholder="Showtime Name *" class="w-full p-3 rounded-xl border-2 border-gray-300">
+            <input type="text" id="editShowtimeTime" placeholder="Time *" class="w-full p-3 rounded-xl border-2 border-gray-300">
+            <div class="flex gap-4 mt-4">
+                <button onclick="saveShowtimeEdit()" class="btn-success px-6 py-3 rounded-xl flex-1">Save</button>
+                <button onclick="closeShowtimeModal()" class="btn-danger px-6 py-3 rounded-xl flex-1">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit User Modal -->
+<div id="editUserModal" class="modal">
+    <div class="modal-content">
+        <h2 class="text-2xl font-bold mb-4">Edit User</h2>
+        <div class="space-y-4">
+            <input type="hidden" id="editUserId">
+            <input type="text" id="editUserName" placeholder="Full Name *" class="w-full p-3 rounded-xl border-2 border-gray-300">
+            <input type="email" id="editUserEmail" placeholder="Email *" class="w-full p-3 rounded-xl border-2 border-gray-300">
+            <input type="password" id="editUserPassword" placeholder="Password (leave blank to keep current)" class="w-full p-3 rounded-xl border-2 border-gray-300">
+            <input type="text" id="editUserPhone" placeholder="Phone (optional)" class="w-full p-3 rounded-xl border-2 border-gray-300">
+            <input type="text" id="editUserSignupDate" disabled class="w-full p-3 rounded-xl border-2 border-gray-300 bg-gray-100">
+            <div class="flex gap-4 mt-4">
+                <button onclick="saveUserEdit()" class="btn-success px-6 py-3 rounded-xl flex-1">Save</button>
+                <button onclick="closeUserModal()" class="btn-danger px-6 py-3 rounded-xl flex-1">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+feather.replace();
+
+// SHARED localStorage keys with home screen
+const STORAGE_KEYS = {
+    MOVIES: 'homeScreenCurrentMovies',
+    THEATERS: 'homeScreenTheaters',
+    SHOWTIMES: 'homeScreenShowtimes',
+    TICKETS: 'ticketHistory',
+    USERS: 'registeredUsers'  // New key for users
+};
+
+// Movie data with prices (for backwards compatibility)
+let moviePrices = {
+    "Dune: Part Two": 15.99,
+    "The Batman": 14.99,
+    "Everything Everywhere All at Once": 13.99,
+    "Top Gun: Maverick": 14.50,
+    "Avengers: Endgame": 16.99,
+    "Avengers: Infinity War": 15.50,
+    "The Avengers": 12.99,
+    "X-Men: Days of Future Past": 13.50,
+    "Spider-Man: Brand New Day": 17.99,
+    "Avengers: Secret Wars": 18.99,
+    "X-Men": 16.50,
+    "The Batman: Part II": 17.50
+};
+
+// Default data
+const defaultMovies = [
+    {id:1, title:"Dune: Part Two", genre:"Sci-Fi", rating:4.8, price:15.99, image:"https://blog.teufelaudio.nl/wp-content/uploads/2024/02/dune-2-imago415303603-2.jpg", synopsis:"Epic sci-fi adventure continues.", cast:"Timothée Chalamet, Zendaya", runtime:"2h 45m"},
+    {id:2, title:"The Batman", genre:"Action", rating:4.6, price:14.99, image:"https://m.media-amazon.com/images/M/MV5BMDdmMTBiNTYtMDIzNi00NGVlLWIzMDYtZTk3MTQ3NGQxZGEwXkEyXkFqcGdeQXVyMzMwOTU5MDk@._V1_FMjpg_UX1000_.jpg", synopsis:"The Dark Knight returns.", cast:"Robert Pattinson, Zoë Kravitz", runtime:"2h 55m"},
+    {id:3, title:"Everything Everywhere All at Once", genre:"Adventure", rating:4.9, price:13.99, image:"https://wallpapers.com/images/hd/everything-everywhere-all-at-once-6nyvo1vueb3ph27x.jpg", synopsis:"A multiverse story.", cast:"Michelle Yeoh, Ke Huy Quan", runtime:"2h 20m"},
+    {id:4, title:"Top Gun: Maverick", genre:"Action", rating:4.7, price:14.50, image:"https://static1.srcdn.com/wordpress/wp-content/uploads/2022/05/top-gun-maverick.jpg", synopsis:"Return to the skies.", cast:"Tom Cruise, Miles Teller", runtime:"2h 11m"},
+    {id:5, title:"Avengers: Endgame", genre:"Action", rating:4.9, price:16.99, image:"https://disney.images.edge.bamgrid.com/ripcut-delivery/v2/variant/disney/7b350a2f-0b3e-4033-8125-34c4d67e3bbe/compose?aspectRatio=1.78&format=webp&width=1200", synopsis:"The ultimate showdown.", cast:"Robert Downey Jr., Chris Evans", runtime:"3h 2m"},
+    {id:6, title:"Avengers: Infinity War", genre:"Action", rating:4.8, price:15.50, image:"https://cdn.marvel.com/content/2x/avengersinfinitywar_lob_mas_hlf_01_3.jpg", synopsis:"Thanos threatens the universe.", cast:"Chris Hemsworth, Mark Ruffalo", runtime:"2h 40m"},
+    {id:7, title:"The Avengers", genre:"Action", rating:4.7, price:12.99, image:"https://m.media-amazon.com/images/M/MV5BNGE0YTVjNzUtNzJjOS00NGNlLTgxMzctZTY4YTE1Y2Y1ZTU4XkEyXkFqcGc@._V1_.jpg", synopsis:"Earth's mightiest heroes unite.", cast:"Robert Downey Jr., Chris Evans", runtime:"2h 23m"},
+    {id:8, title:"X-Men: Days of Future Past", genre:"Action", rating:4.6, price:13.50, image:"https://m.media-amazon.com/images/M/MV5BNzNiYWE4NjMtMTU4OS00NmM4LWE4ZjAtYmE5OTA5NjkzODExXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg", synopsis:"Mutants fight for the future.", cast:"Hugh Jackman, James McAvoy", runtime:"2h 11m"}
+];
+
+const defaultTheaters = ["Lubbock","Amarillo","Levelland","Plainview","Snyder","Abilene"];
+const defaultShowtimes = [
+    {name:"Morning", time:"10:00 AM"},
+    {name:"Afternoon", time:"2:00 PM"},
+    {name:"Evening", time:"6:00 PM"}
+];
+
+const defaultUsers = [];  // No default users, but can add for testing if needed
+
+// Load shared data
+let adminMovies = JSON.parse(localStorage.getItem(STORAGE_KEYS.MOVIES) || 'null') || defaultMovies;
+let adminTheaters = JSON.parse(localStorage.getItem(STORAGE_KEYS.THEATERS) || 'null') || defaultTheaters;
+let adminShowtimes = JSON.parse(localStorage.getItem(STORAGE_KEYS.SHOWTIMES) || 'null') || defaultShowtimes;
+let adminUsers = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || 'null') || defaultUsers;
+
+// Save initial data if not exists
+if (!localStorage.getItem(STORAGE_KEYS.MOVIES)) {
+    localStorage.setItem(STORAGE_KEYS.MOVIES, JSON.stringify(adminMovies));
+}
+if (!localStorage.getItem(STORAGE_KEYS.THEATERS)) {
+    localStorage.setItem(STORAGE_KEYS.THEATERS, JSON.stringify(adminTheaters));
+}
+if (!localStorage.getItem(STORAGE_KEYS.SHOWTIMES)) {
+    localStorage.setItem(STORAGE_KEYS.SHOWTIMES, JSON.stringify(adminShowtimes));
+}
+if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(adminUsers));
+}
+
+// Pagination
+let currentPage = 1;
+const itemsPerPage = 10;
+
+// Chart instances
+let charts = {};
+
+function showSection(id){
+    document.querySelectorAll('section').forEach(s=>s.classList.add('hidden'));
+    document.getElementById(id).classList.remove('hidden');
+    
+    if(id === 'dashboard') renderDashboard();
+    else if(id === 'ticketHistory') {
+        populateFilters();
+        renderTickets();
+    }
+    else if(id === 'movieRevenue') renderMovieRevenue();
+    else if(id === 'theaterAnalytics') renderTheaterAnalytics();
+    else if(id === 'timeAnalytics') renderTimeAnalytics();
+    else if(id === 'manageMovies') renderMoviesList();
+    else if(id === 'manageTheaters') {
+        renderTheatersList();
+        renderShowtimesList();
+    }
+    else if(id === 'manageUsers') {
+        renderUsersList();
+    }
+}
+
+function getTickets() {
+    return JSON.parse(localStorage.getItem(STORAGE_KEYS.TICKETS) || '[]');
+}
+
+function destroyChart(chartId) {
+    if (charts[chartId]) {
+        charts[chartId].destroy();
+        delete charts[chartId];
+    }
+}
+
+function renderDashboard() {
+    const tickets = getTickets();
+    
+    const totalTickets = tickets.reduce((sum, t) => sum + t.quantity, 0);
+    document.getElementById('totalTickets').innerText = totalTickets;
+    
+    const totalRevenue = tickets.reduce((sum, t) => {
+        const price = t.price || moviePrices[t.movie] || 0;
+        return sum + (price * t.quantity);
+    }, 0);
+    document.getElementById('totalRevenue').innerText = totalRevenue.toFixed(2);
+    
+    const uniqueMovies = new Set(tickets.map(t => t.movie)).size;
+    document.getElementById('uniqueMovies').innerText = uniqueMovies;
+    
+    const avgPrice = totalTickets > 0 ? totalRevenue / totalTickets : 0;
+    document.getElementById('avgTicketPrice').innerText = avgPrice.toFixed(2);
+    
+    const movieStats = {};
+    tickets.forEach(t => {
+        const price = t.price || moviePrices[t.movie] || 0;
+        if(!movieStats[t.movie]) {
+            movieStats[t.movie] = { tickets: 0, revenue: 0 };
+        }
+        movieStats[t.movie].tickets += t.quantity;
+        movieStats[t.movie].revenue += price * t.quantity;
+    });
+    
+    const topMoviesHtml = Object.entries(movieStats)
+        .sort((a, b) => b[1].revenue - a[1].revenue)
+        .slice(0, 5)
+        .map(([movie, stats], idx) => `
+            <div class="flex justify-between items-center p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
+                <div>
+                    <span class="font-bold text-lg">${idx + 1}. ${movie}</span>
+                    <span class="text-gray-600 text-sm ml-2">(${stats.tickets} tickets)</span>
+                </div>
+                <span class="font-black text-green-600 text-xl">$${stats.revenue.toFixed(2)}</span>
+            </div>
+        `).join('');
+    document.getElementById('topMovies').innerHTML = topMoviesHtml || '<p class="text-gray-500">No sales yet</p>';
+    
+    renderCharts(tickets, movieStats);
+}
+
+function renderCharts(tickets, movieStats) {
+    destroyChart('movieRevenueChart');
+    const movieData = Object.entries(movieStats)
+        .sort((a, b) => b[1].revenue - a[1].revenue)
+        .slice(0, 8);
+    
+    const ctx1 = document.getElementById('movieRevenueChart').getContext('2d');
+    charts['movieRevenueChart'] = new Chart(ctx1, {
+        type: 'bar',
+        data: {
+            labels: movieData.map(m => m[0]),
+            datasets: [{
+                label: 'Revenue ($)',
+                data: movieData.map(m => m[1].revenue),
+                backgroundColor: 'rgba(74, 144, 226, 0.8)',
+                borderColor: 'rgba(74, 144, 226, 1)',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+    
+    destroyChart('theaterChart');
+    const theaterStats = {};
+    tickets.forEach(t => {
+        if(!theaterStats[t.theater]) theaterStats[t.theater] = 0;
+        const price = t.price || moviePrices[t.movie] || 0;
+        theaterStats[t.theater] += price * t.quantity;
+    });
+    
+    const ctx2 = document.getElementById('theaterChart').getContext('2d');
+    charts['theaterChart'] = new Chart(ctx2, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(theaterStats),
+            datasets: [{
+                data: Object.values(theaterStats),
+                backgroundColor: [
+                    'rgba(74, 144, 226, 0.8)',
+                    'rgba(120, 119, 198, 0.8)',
+                    'rgba(255, 138, 101, 0.8)',
+                    'rgba(16, 185, 129, 0.8)',
+                    'rgba(239, 68, 68, 0.8)',
+                    'rgba(245, 158, 11, 0.8)'
+                ]
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+    
+    destroyChart('showtimeChart');
+    const showtimeStats = {};
+    tickets.forEach(t => {
+        if(!showtimeStats[t.showtime]) showtimeStats[t.showtime] = 0;
+        showtimeStats[t.showtime] += t.quantity;
+    });
+    
+    const ctx3 = document.getElementById('showtimeChart').getContext('2d');
+    charts['showtimeChart'] = new Chart(ctx3, {
+        type: 'pie',
+        data: {
+            labels: Object.keys(showtimeStats),
+            datasets: [{
+                data: Object.values(showtimeStats),
+                backgroundColor: [
+                    'rgba(74, 144, 226, 0.8)',
+                    'rgba(120, 119, 198, 0.8)',
+                    'rgba(255, 138, 101, 0.8)'
+                ]
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+    
+    destroyChart('paymentChart');
+    const paymentStats = {};
+    tickets.forEach(t => {
+        if(!paymentStats[t.paymentMethod]) paymentStats[t.paymentMethod] = 0;
+        const price = t.price || moviePrices[t.movie] || 0;
+        paymentStats[t.paymentMethod] += price * t.quantity;
+    });
+    
+    const ctx4 = document.getElementById('paymentChart').getContext('2d');
+    charts['paymentChart'] = new Chart(ctx4, {
+        type: 'bar',
+        data: {
+            labels: Object.keys(paymentStats),
+            datasets: [{
+                label: 'Revenue ($)',
+                data: Object.values(paymentStats),
+                backgroundColor: 'rgba(120, 119, 198, 0.8)',
+                borderColor: 'rgba(120, 119, 198, 1)',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+}
+
+function populateFilters() {
+    const tickets = getTickets();
+    const theaters = [...new Set(tickets.map(t => t.theater))];
+    const theaterSelect = document.getElementById('filterTheaterTicket');
+    theaterSelect.innerHTML = '<option value="">All Theaters</option>' + 
+        theaters.map(t => `<option value="${t}">${t}</option>`).join('');
+    
+    const showtimes = [...new Set(tickets.map(t => t.showtime))];
+    const showtimeSelect = document.getElementById('filterShowtimeTicket');
+    showtimeSelect.innerHTML = '<option value="">All Showtimes</option>' + 
+        showtimes.map(s => `<option value="${s}">${s}</option>`).join('');
+}
+
+function renderTickets() {
+    let tickets = getTickets().reverse();
+    const searchTerm = document.getElementById('searchTicket')?.value.toLowerCase() || '';
+    const theaterFilter = document.getElementById('filterTheaterTicket')?.value || '';
+    const showtimeFilter = document.getElementById('filterShowtimeTicket')?.value || '';
+    
+    tickets = tickets.filter(t => {
+        const matchesSearch = t.movie.toLowerCase().includes(searchTerm) ||
+            t.theater.toLowerCase().includes(searchTerm) ||
+            t.ticketId.toLowerCase().includes(searchTerm);
+        const matchesTheater = !theaterFilter || t.theater === theaterFilter;
+        const matchesShowtime = !showtimeFilter || t.showtime === showtimeFilter;
+        return matchesSearch && matchesTheater && matchesShowtime;
+    });
+    
+    const container = document.getElementById('ticketHistoryContainer');
+    
+    if(tickets.length === 0) {
+        container.innerHTML = '<p class="text-gray-500 text-center py-8">No tickets found</p>';
+        document.getElementById('ticketPagination').innerHTML = '';
+        return;
+    }
+    
+    const totalPages = Math.ceil(tickets.length / itemsPerPage);
+    const startIdx = (currentPage - 1) * itemsPerPage;
+    const endIdx = startIdx + itemsPerPage;
+    const paginatedTickets = tickets.slice(startIdx, endIdx);
+    
+    const table = document.createElement('table');
+    table.innerHTML = `
+        <thead>
+            <tr>
+                <th>Ticket ID</th>
+                <th>Movie</th>
+                <th>Theater</th>
+                <th>Showtime</th>
+                <th>Quantity</th>
+                <th>Price/Ticket</th>
+                <th>Total Revenue</th>
+                <th>Payment</th>
+                <th>Purchase Date</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    `;
+    
+    const tbody = table.querySelector('tbody');
+    paginatedTickets.forEach(t => {
+        const price = t.price || moviePrices[t.movie] || 0;
+        const total = price * t.quantity;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="font-mono text-xs">${t.ticketId}</td>
+            <td><strong>${t.movie}</strong><br><span class="text-sm text-gray-600">${t.genre || 'N/A'}</span></td>
+            <td>${t.theater || 'N/A'}</td>
+            <td>${t.showtime || 'N/A'}</td>
+            <td class="text-center font-bold">${t.quantity}</td>
+            <td>${price.toFixed(2)}</td>
+            <td class="font-bold text-green-600">${total.toFixed(2)}</td>
+            <td>${t.paymentMethod || 'N/A'}</td>
+            <td class="text-sm">${t.purchaseDate || 'N/A'}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+    
+    container.innerHTML = '';
+    container.appendChild(table);
+    renderPagination(totalPages);
+}
+
+function renderPagination(totalPages) {
+    const container = document.getElementById('ticketPagination');
+    container.innerHTML = '';
+    if (totalPages <= 1) return;
+    
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'pagination-btn';
+    prevBtn.innerText = '← Previous';
+    prevBtn.disabled = currentPage === 1;
+    prevBtn.onclick = () => {
+        if (currentPage > 1) {
+            currentPage--;
+            renderTickets();
+        }
+    };
+    container.appendChild(prevBtn);
+    
+    const maxVisible = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+    if (endPage - startPage < maxVisible - 1) {
+        startPage = Math.max(1, endPage - maxVisible + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+        const pageBtn = document.createElement('button');
+        pageBtn.className = 'pagination-btn' + (i === currentPage ? ' active' : '');
+        pageBtn.innerText = i;
+        pageBtn.onclick = () => {
+            currentPage = i;
+            renderTickets();
+        };
+        container.appendChild(pageBtn);
+    }
+    
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'pagination-btn';
+    nextBtn.innerText = 'Next →';
+    nextBtn.disabled = currentPage === totalPages;
+    nextBtn.onclick = () => {
+        if (currentPage < totalPages) {
+            currentPage++;
+            renderTickets();
+        }
+    };
+    container.appendChild(nextBtn);
+}
+
+function clearTicketFilters() {
+    document.getElementById('searchTicket').value = '';
+    document.getElementById('filterTheaterTicket').value = '';
+    document.getElementById('filterShowtimeTicket').value = '';
+    currentPage = 1;
+    renderTickets();
+}
+
+function renderMovieRevenue() {
+    const tickets = getTickets();
+    const container = document.getElementById('movieRevenueContainer');
+    
+    const movieData = {};
+    tickets.forEach(t => {
+        if(!movieData[t.movie]) {
+            movieData[t.movie] = {
+                title: t.movie,
+                genre: t.genre,
+                ticketsSold: 0,
+                revenue: 0,
+                theaters: {},
+                showtimes: {},
+                payments: {}
+            };
+        }
+        
+        const price = t.price || moviePrices[t.movie] || 0;
+        movieData[t.movie].ticketsSold += t.quantity;
+        movieData[t.movie].revenue += price * t.quantity;
+        
+        if(!movieData[t.movie].theaters[t.theater]) movieData[t.movie].theaters[t.theater] = 0;
+        movieData[t.movie].theaters[t.theater] += t.quantity;
+        
+        if(!movieData[t.movie].showtimes[t.showtime]) movieData[t.movie].showtimes[t.showtime] = 0;
+        movieData[t.movie].showtimes[t.showtime] += t.quantity;
+        
+        if(!movieData[t.movie].payments[t.paymentMethod]) movieData[t.movie].payments[t.paymentMethod] = 0;
+        movieData[t.movie].payments[t.paymentMethod] += t.quantity;
+    });
+    
+    const sortedMovies = Object.values(movieData).sort((a, b) => b.revenue - a.revenue);
+    
+    if(sortedMovies.length === 0) {
+        container.innerHTML = '<p class="text-gray-500 text-center py-8">No revenue data yet</p>';
+        return;
+    }
+    
+    const table = document.createElement('table');
+    table.innerHTML = `
+        <thead>
+            <tr>
+                <th>Movie</th>
+                <th>Tickets Sold</th>
+                <th>Revenue</th>
+                <th>Theaters (Tickets)</th>
+                <th>Showtimes (Tickets)</th>
+                <th>Payment Methods (Tickets)</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    `;
+    
+    const tbody = table.querySelector('tbody');
+    sortedMovies.forEach(m => {
+        const theaterStr = Object.entries(m.theaters)
+            .sort((a, b) => b[1] - a[1])
+            .map(([theater, count]) => `${theater}: ${count}`)
+            .join('<br>');
+        
+        const showtimeStr = Object.entries(m.showtimes)
+            .sort((a, b) => b[1] - a[1])
+            .map(([time, count]) => `${time}: ${count}`)
+            .join('<br>');
+        
+        const paymentStr = Object.entries(m.payments)
+            .sort((a, b) => b[1] - a[1])
+            .map(([method, count]) => `${method}: ${count}`)
+            .join('<br>');
+        
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><strong>${m.title}</strong><br><span class="text-sm text-gray-600">${m.genre}</span></td>
+            <td class="text-center font-bold text-lg">${m.ticketsSold}</td>
+            <td class="font-bold text-green-600 text-lg">${m.revenue.toFixed(2)}</td>
+            <td class="text-sm">${theaterStr}</td>
+            <td class="text-sm">${showtimeStr}</td>
+            <td class="text-sm">${paymentStr}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+    
+    container.innerHTML = '';
+    container.appendChild(table);
+}
+
+function renderTheaterAnalytics() {
+    const tickets = getTickets();
+    const container = document.getElementById('theaterAnalyticsContainer');
+    
+    const theaterData = {};
+    tickets.forEach(t => {
+        if(!theaterData[t.theater]) {
+            theaterData[t.theater] = {
+                theater: t.theater,
+                ticketsSold: 0,
+                revenue: 0,
+                movies: {},
+                showtimes: {}
+            };
+        }
+        
+        const price = t.price || moviePrices[t.movie] || 0;
+        theaterData[t.theater].ticketsSold += t.quantity;
+        theaterData[t.theater].revenue += price * t.quantity;
+        
+        if(!theaterData[t.theater].movies[t.movie]) theaterData[t.theater].movies[t.movie] = 0;
+        theaterData[t.theater].movies[t.movie] += t.quantity;
+        
+        if(!theaterData[t.theater].showtimes[t.showtime]) theaterData[t.theater].showtimes[t.showtime] = 0;
+        theaterData[t.theater].showtimes[t.showtime] += t.quantity;
+    });
+    
+    const sortedTheaters = Object.values(theaterData).sort((a, b) => b.revenue - a.revenue);
+    
+    if(sortedTheaters.length === 0) {
+        container.innerHTML = '<p class="text-gray-500 text-center py-8">No theater data yet</p>';
+        return;
+    }
+    
+    const table = document.createElement('table');
+    table.innerHTML = `
+        <thead>
+            <tr>
+                <th>Theater</th>
+                <th>Tickets Sold</th>
+                <th>Revenue</th>
+                <th>Top Movies (Tickets)</th>
+                <th>Showtime Performance (Tickets)</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    `;
+    
+    const tbody = table.querySelector('tbody');
+    sortedTheaters.forEach(t => {
+        const moviesStr = Object.entries(t.movies)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .map(([movie, count]) => `${movie}: ${count}`)
+            .join('<br>');
+        
+        const showtimesStr = Object.entries(t.showtimes)
+            .sort((a, b) => b[1] - a[1])
+            .map(([time, count]) => `${time}: ${count}`)
+            .join('<br>');
+        
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><strong class="text-lg">${t.theater}</strong></td>
+            <td class="text-center font-bold text-lg">${t.ticketsSold}</td>
+            <td class="font-bold text-green-600 text-lg">${t.revenue.toFixed(2)}</td>
+            <td class="text-sm">${moviesStr}</td>
+            <td class="text-sm">${showtimesStr}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+    
+    container.innerHTML = '';
+    container.appendChild(table);
+}
+
+function renderTimeAnalytics() {
+    const tickets = getTickets();
+    const container = document.getElementById('timeAnalyticsContainer');
+    
+    const timeData = {};
+    tickets.forEach(t => {
+        if(!timeData[t.showtime]) {
+            timeData[t.showtime] = {
+                showtime: t.showtime,
+                ticketsSold: 0,
+                revenue: 0,
+                movies: {},
+                theaters: {}
+            };
+        }
+        
+        const price = t.price || moviePrices[t.movie] || 0;
+        timeData[t.showtime].ticketsSold += t.quantity;
+        timeData[t.showtime].revenue += price * t.quantity;
+        
+        if(!timeData[t.showtime].movies[t.movie]) timeData[t.showtime].movies[t.movie] = 0;
+        timeData[t.showtime].movies[t.movie] += t.quantity;
+        
+        if(!timeData[t.showtime].theaters[t.theater]) timeData[t.showtime].theaters[t.theater] = 0;
+        timeData[t.showtime].theaters[t.theater] += t.quantity;
+    });
+    
+    const sortedTimes = Object.values(timeData).sort((a, b) => b.revenue - a.revenue);
+    
+    if(sortedTimes.length === 0) {
+        container.innerHTML = '<p class="text-gray-500 text-center py-8">No showtime data yet</p>';
+        return;
+    }
+    
+    const table = document.createElement('table');
+    table.innerHTML = `
+        <thead>
+            <tr>
+                <th>Showtime</th>
+                <th>Tickets Sold</th>
+                <th>Revenue</th>
+                <th>Top Movies (Tickets)</th>
+                <th>Theater Distribution (Tickets)</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    `;
+    
+    const tbody = table.querySelector('tbody');
+    sortedTimes.forEach(t => {
+        const moviesStr = Object.entries(t.movies)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .map(([movie, count]) => `${movie}: ${count}`)
+            .join('<br>');
+        
+        const theatersStr = Object.entries(t.theaters)
+            .sort((a, b) => b[1] - a[1])
+            .map(([theater, count]) => `${theater}: ${count}`)
+            .join('<br>');
+        
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><strong class="text-lg">${t.showtime}</strong></td>
+            <td class="text-center font-bold text-lg">${t.ticketsSold}</td>
+            <td class="font-bold text-green-600 text-lg">${t.revenue.toFixed(2)}</td>
+            <td class="text-sm">${moviesStr}</td>
+            <td class="text-sm">${theatersStr}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+    
+    container.innerHTML = '';
+    container.appendChild(table);
+}
+
+// Movie Management
+function addMovie() {
+    const title = document.getElementById('newMovieTitle').value.trim();
+    const genre = document.getElementById('newMovieGenre').value.trim();
+    const rating = parseFloat(document.getElementById('newMovieRating').value);
+    const price = parseFloat(document.getElementById('newMoviePrice').value);
+    const image = document.getElementById('newMovieImage').value.trim();
+    const synopsis = document.getElementById('newMovieSynopsis').value.trim();
+    const cast = document.getElementById('newMovieCast').value.trim();
+    const runtime = document.getElementById('newMovieRuntime').value.trim();
+    
+    // Validation
+    if (!title || !genre || !rating || !price || !image) {
+        alert('Please fill in all required fields (marked with *)');
+        return;
+    }
+    
+    if (rating < 0 || rating > 5) {
+        alert('Rating must be between 0 and 5');
+        return;
+    }
+    
+    if (price <= 0) {
+        alert('Price must be greater than 0');
+        return;
+    }
+    
+    // Check for duplicate movie title
+    if (adminMovies.some(m => m.title.toLowerCase() === title.toLowerCase())) {
+        alert('A movie with this title already exists!');
+        return;
+    }
+    
+    const newMovie = {
+        id: Date.now(),
+        title,
+        genre,
+        rating,
+        price,
+        image,
+        synopsis: synopsis || 'No synopsis available',
+        cast: cast || 'Cast information unavailable',
+        runtime: runtime || 'Runtime not specified'
+    };
+    
+    adminMovies.push(newMovie);
+    localStorage.setItem(STORAGE_KEYS.MOVIES, JSON.stringify(adminMovies));
+    
+    // Clear form
+    document.getElementById('newMovieTitle').value = '';
+    document.getElementById('newMovieGenre').value = '';
+    document.getElementById('newMovieRating').value = '';
+    document.getElementById('newMoviePrice').value = '';
+    document.getElementById('newMovieImage').value = '';
+    document.getElementById('newMovieSynopsis').value = '';
+    document.getElementById('newMovieCast').value = '';
+    document.getElementById('newMovieRuntime').value = '';
+    
+    alert('Movie added successfully! It will now appear on the home screen.');
+    renderMoviesList();
+}
+
+function renderMoviesList() {
+    const container = document.getElementById('moviesListContainer');
+    const searchTerm = document.getElementById('searchMovies')?.value.toLowerCase() || '';
+    
+    const filteredMovies = adminMovies.filter(m => 
+        m.title.toLowerCase().includes(searchTerm) ||
+        m.genre.toLowerCase().includes(searchTerm)
+    );
+    
+    if (filteredMovies.length === 0) {
+        container.innerHTML = '<p class="text-gray-500">No movies found.</p>';
+        return;
+    }
+    
+    container.innerHTML = filteredMovies.map((movie, idx) => {
+        const actualIdx = adminMovies.findIndex(m => m.id === movie.id);
+        return `
+        <div class="flex justify-between items-center p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition">
+            <div class="flex items-center gap-4">
+                <img src="${movie.image}" alt="${movie.title}" class="w-20 h-28 object-cover rounded-lg shadow-md" onerror="this.src='https://via.placeholder.com/80x112?text=No+Image'">
+                <div>
+                    <h4 class="font-bold text-lg">${movie.title}</h4>
+                    <p class="text-sm text-gray-600">${movie.genre} • ⭐ ${movie.rating}</p>
+                    <p class="text-sm font-bold text-green-600">${movie.price.toFixed(2)}</p>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="editMovie(${actualIdx})" class="btn-primary px-4 py-2 rounded-xl text-sm">✏️ Edit</button>
+                <button onclick="deleteMovie(${actualIdx})" class="btn-danger px-4 py-2 rounded-xl text-sm">🗑️ Delete</button>
+            </div>
+        </div>
+    `}).join('');
+}
+
+function editMovie(idx) {
+    const movie = adminMovies[idx];
+    document.getElementById('editMovieId').value = idx;
+    document.getElementById('editMovieTitle').value = movie.title;
+    document.getElementById('editMovieGenre').value = movie.genre;
+    document.getElementById('editMovieRating').value = movie.rating;
+    document.getElementById('editMoviePrice').value = movie.price;
+    document.getElementById('editMovieImage').value = movie.image;
+    document.getElementById('editMovieSynopsis').value = movie.synopsis || '';
+    document.getElementById('editMovieCast').value = movie.cast || '';
+    document.getElementById('editMovieRuntime').value = movie.runtime || '';
+    
+    document.getElementById('editMovieModal').classList.add('active');
+}
+
+function saveMovieEdit() {
+    const idx = parseInt(document.getElementById('editMovieId').value);
+    const title = document.getElementById('editMovieTitle').value.trim();
+    const genre = document.getElementById('editMovieGenre').value.trim();
+    const rating = parseFloat(document.getElementById('editMovieRating').value);
+    const price = parseFloat(document.getElementById('editMoviePrice').value);
+    const image = document.getElementById('editMovieImage').value.trim();
+    const synopsis = document.getElementById('editMovieSynopsis').value.trim();
+    const cast = document.getElementById('editMovieCast').value.trim();
+    const runtime = document.getElementById('editMovieRuntime').value.trim();
+    
+    // Validation
+    if (!title || !genre || !rating || !price || !image) {
+        alert('Please fill in all required fields');
+        return;
+    }
+    
+    if (rating < 0 || rating > 5) {
+        alert('Rating must be between 0 and 5');
+        return;
+    }
+    
+    if (price <= 0) {
+        alert('Price must be greater than 0');
+        return;
+    }
+    
+    adminMovies[idx] = {
+        ...adminMovies[idx],
+        title,
+        genre,
+        rating,
+        price,
+        image,
+        synopsis: synopsis || 'No synopsis available',
+        cast: cast || 'Cast information unavailable',
+        runtime: runtime || 'Runtime not specified'
+    };
+    
+    localStorage.setItem(STORAGE_KEYS.MOVIES, JSON.stringify(adminMovies));
+    
+    closeEditModal();
+    alert('Movie updated successfully! Changes will appear on the home screen.');
+    renderMoviesList();
+}
+
+function closeEditModal() {
+    document.getElementById('editMovieModal').classList.remove('active');
+}
+
+function deleteMovie(idx) {
+    const movie = adminMovies[idx];
+    if (!confirm(`Are you sure you want to delete "${movie.title}"? This action cannot be undone.`)) return;
+    
+    adminMovies.splice(idx, 1);
+    localStorage.setItem(STORAGE_KEYS.MOVIES, JSON.stringify(adminMovies));
+    
+    alert('Movie deleted successfully! It will be removed from the home screen.');
+    renderMoviesList();
+}
+
+// Theater Management
+function addTheater() {
+    const name = document.getElementById('newTheaterName').value.trim();
+    
+    if (!name) {
+        alert('Please enter a theater name');
+        return;
+    }
+    
+    if (adminTheaters.some(t => t.toLowerCase() === name.toLowerCase())) {
+        alert('This theater already exists!');
+        return;
+    }
+    
+    adminTheaters.push(name);
+    localStorage.setItem(STORAGE_KEYS.THEATERS, JSON.stringify(adminTheaters));
+    
+    document.getElementById('newTheaterName').value = '';
+    alert('Theater added successfully! It will now appear on the home screen.');
+    renderTheatersList();
+}
+
+function renderTheatersList() {
+    const container = document.getElementById('theatersListContainer');
+    const searchTerm = document.getElementById('searchTheaters')?.value.toLowerCase() || '';
+    
+    const filteredTheaters = adminTheaters.filter(t => 
+        t.toLowerCase().includes(searchTerm)
+    );
+    
+    if (filteredTheaters.length === 0) {
+        container.innerHTML = '<p class="text-gray-500">No theaters found.</p>';
+        return;
+    }
+    
+    container.innerHTML = filteredTheaters.map(theater => {
+        const actualIdx = adminTheaters.indexOf(theater);
+        return `
+        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition">
+            <span class="font-bold">🎭 ${theater}</span>
+            <div class="flex gap-2">
+                <button onclick="editTheater(${actualIdx})" class="btn-primary px-4 py-2 rounded-xl text-sm">✏️ Edit</button>
+                <button onclick="deleteTheater(${actualIdx})" class="btn-danger px-4 py-2 rounded-xl text-sm">🗑️ Delete</button>
+            </div>
+        </div>
+    `}).join('');
+}
+
+function editTheater(idx) {
+    const theater = adminTheaters[idx];
+    document.getElementById('editTheaterId').value = idx;
+    document.getElementById('editTheaterName').value = theater;
+    document.getElementById('editTheaterModal').classList.add('active');
+}
+
+function saveTheaterEdit() {
+    const idx = parseInt(document.getElementById('editTheaterId').value);
+    const name = document.getElementById('editTheaterName').value.trim();
+    
+    if (!name) {
+        alert('Please enter a theater name');
+        return;
+    }
+    
+    // Check for duplicate (excluding current)
+    if (adminTheaters.some((t, i) => i !== idx && t.toLowerCase() === name.toLowerCase())) {
+        alert('A theater with this name already exists!');
+        return;
+    }
+    
+    adminTheaters[idx] = name;
+    localStorage.setItem(STORAGE_KEYS.THEATERS, JSON.stringify(adminTheaters));
+    
+    closeTheaterModal();
+    alert('Theater updated successfully! Changes will appear on the home screen.');
+    renderTheatersList();
+}
+
+function closeTheaterModal() {
+    document.getElementById('editTheaterModal').classList.remove('active');
+}
+
+function deleteTheater(idx) {
+    const theater = adminTheaters[idx];
+    if (!confirm(`Are you sure you want to delete "${theater}"? This action cannot be undone.`)) return;
+    
+    adminTheaters.splice(idx, 1);
+    localStorage.setItem(STORAGE_KEYS.THEATERS, JSON.stringify(adminTheaters));
+    
+    alert('Theater deleted successfully! It will be removed from the home screen.');
+    renderTheatersList();
+}
+
+// Showtime Management
+function addShowtime() {
+    const name = document.getElementById('newShowtimeName').value.trim();
+    const time = document.getElementById('newShowtimeTime').value.trim();
+    
+    if (!name || !time) {
+        alert('Please enter both showtime name and time');
+        return;
+    }
+    
+    // Check for duplicate
+    if (adminShowtimes.some(s => s.name.toLowerCase() === name.toLowerCase())) {
+        alert('A showtime with this name already exists!');
+        return;
+    }
+    
+    adminShowtimes.push({ name, time });
+    localStorage.setItem(STORAGE_KEYS.SHOWTIMES, JSON.stringify(adminShowtimes));
+    
+    document.getElementById('newShowtimeName').value = '';
+    document.getElementById('newShowtimeTime').value = '';
+    alert('Showtime added successfully! It will now appear on the home screen.');
+    renderShowtimesList();
+}
+
+function renderShowtimesList() {
+    const container = document.getElementById('showtimesListContainer');
+    const searchTerm = document.getElementById('searchShowtimes')?.value.toLowerCase() || '';
+    
+    const filteredShowtimes = adminShowtimes.filter(s => 
+        s.name.toLowerCase().includes(searchTerm) ||
+        s.time.toLowerCase().includes(searchTerm)
+    );
+    
+    if (filteredShowtimes.length === 0) {
+        container.innerHTML = '<p class="text-gray-500">No showtimes found.</p>';
+        return;
+    }
+    
+    container.innerHTML = filteredShowtimes.map(showtime => {
+        const actualIdx = adminShowtimes.findIndex(s => s.name === showtime.name);
+        return `
+        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition">
+            <div>
+                <span class="font-bold">🕐 ${showtime.name}</span>
+                <span class="text-gray-600 ml-2">(${showtime.time})</span>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="editShowtime(${actualIdx})" class="btn-primary px-4 py-2 rounded-xl text-sm">✏️ Edit</button>
+                <button onclick="deleteShowtime(${actualIdx})" class="btn-danger px-4 py-2 rounded-xl text-sm">🗑️ Delete</button>
+            </div>
+        </div>
+    `}).join('');
+}
+
+function editShowtime(idx) {
+    const showtime = adminShowtimes[idx];
+    document.getElementById('editShowtimeId').value = idx;
+    document.getElementById('editShowtimeName').value = showtime.name;
+    document.getElementById('editShowtimeTime').value = showtime.time;
+    document.getElementById('editShowtimeModal').classList.add('active');
+}
+
+function saveShowtimeEdit() {
+    const idx = parseInt(document.getElementById('editShowtimeId').value);
+    const name = document.getElementById('editShowtimeName').value.trim();
+    const time = document.getElementById('editShowtimeTime').value.trim();
+    
+    if (!name || !time) {
+        alert('Please enter both showtime name and time');
+        return;
+    }
+    
+    // Check for duplicate (excluding current)
+    if (adminShowtimes.some((s, i) => i !== idx && s.name.toLowerCase() === name.toLowerCase())) {
+        alert('A showtime with this name already exists!');
+        return;
+    }
+    
+    adminShowtimes[idx] = { name, time };
+    localStorage.setItem(STORAGE_KEYS.SHOWTIMES, JSON.stringify(adminShowtimes));
+    
+    closeShowtimeModal();
+    alert('Showtime updated successfully! Changes will appear on the home screen.');
+    renderShowtimesList();
+}
+
+function closeShowtimeModal() {
+    document.getElementById('editShowtimeModal').classList.remove('active');
+}
+
+function deleteShowtime(idx) {
+    const showtime = adminShowtimes[idx];
+    if (!confirm(`Are you sure you want to delete "${showtime.name}"? This action cannot be undone.`)) return;
+    
+    adminShowtimes.splice(idx, 1);
+    localStorage.setItem(STORAGE_KEYS.SHOWTIMES, JSON.stringify(adminShowtimes));
+    
+    alert('Showtime deleted successfully! It will be removed from the home screen.');
+    renderShowtimesList();
+}
+
+// User Management
+function addUser() {
+    const name = document.getElementById('newUserName').value.trim();
+    const email = document.getElementById('newUserEmail').value.trim();
+    const password = document.getElementById('newUserPassword').value.trim();
+    const phone = document.getElementById('newUserPhone').value.trim();
+    
+    if (!name || !email || !password) {
+        alert('Please fill in all required fields');
+        return;
+    }
+    
+    // Basic email validation
+    if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+        alert('Please enter a valid email address');
+        return;
+    }
+    
+    // Check for duplicate email
+    if (adminUsers.some(u => u.email.toLowerCase() === email.toLowerCase())) {
+        alert('A user with this email already exists!');
+        return;
+    }
+    
+    const newUser = {
+        id: Date.now(),
+        name,
+        email,
+        password,  // Note: In real apps, hash passwords! This is for demo only.
+        phone: phone || 'N/A',
+        signupDate: new Date().toISOString()
+    };
+    
+    adminUsers.push(newUser);
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(adminUsers));
+    
+    // Clear form
+    document.getElementById('newUserName').value = '';
+    document.getElementById('newUserEmail').value = '';
+    document.getElementById('newUserPassword').value = '';
+    document.getElementById('newUserPhone').value = '';
+    
+    alert('User added successfully!');
+    renderUsersList();
+}
+
+function renderUsersList() {
+    const container = document.getElementById('usersListContainer');
+    const searchTerm = document.getElementById('searchUsers')?.value.toLowerCase() || '';
+    
+    const filteredUsers = adminUsers.filter(u => 
+        u.name.toLowerCase().includes(searchTerm) ||
+        u.email.toLowerCase().includes(searchTerm) ||
+        u.phone.toLowerCase().includes(searchTerm)
+    );
+    
+    if (filteredUsers.length === 0) {
+        container.innerHTML = '<p class="text-gray-500">No users found.</p>';
+        return;
+    }
+    
+    container.innerHTML = filteredUsers.map((user, idx) => {
+        const actualIdx = adminUsers.findIndex(u => u.id === user.id);
+        return `
+        <div class="flex justify-between items-center p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition">
+            <div>
+                <h4 class="font-bold text-lg">${user.name}</h4>
+                <p class="text-sm text-gray-600">Email: ${user.email}</p>
+                <p class="text-sm text-gray-600">Phone: ${user.phone}</p>
+                <p class="text-sm text-gray-600">Signed up: ${new Date(user.signupDate).toLocaleDateString()}</p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="editUser(${actualIdx})" class="btn-primary px-4 py-2 rounded-xl text-sm">✏️ Edit</button>
+                <button onclick="deleteUser(${actualIdx})" class="btn-danger px-4 py-2 rounded-xl text-sm">🗑️ Delete</button>
+            </div>
+        </div>
+    `}).join('');
+}
+
+function editUser(idx) {
+    const user = adminUsers[idx];
+    document.getElementById('editUserId').value = idx;
+    document.getElementById('editUserName').value = user.name;
+    document.getElementById('editUserEmail').value = user.email;
+    document.getElementById('editUserPassword').value = '';  // Don't prefill password
+    document.getElementById('editUserPhone').value = user.phone === 'N/A' ? '' : user.phone;
+    document.getElementById('editUserSignupDate').value = new Date(user.signupDate).toLocaleString();
+    
+    document.getElementById('editUserModal').classList.add('active');
+}
+
+function saveUserEdit() {
+    const idx = parseInt(document.getElementById('editUserId').value);
+    const name = document.getElementById('editUserName').value.trim();
+    const email = document.getElementById('editUserEmail').value.trim();
+    const password = document.getElementById('editUserPassword').value.trim();
+    const phone = document.getElementById('editUserPhone').value.trim();
+    
+    if (!name || !email) {
+        alert('Please fill in all required fields');
+        return;
+    }
+    
+    if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+        alert('Please enter a valid email address');
+        return;
+    }
+    
+    // Check for duplicate email (excluding current)
+    if (adminUsers.some((u, i) => i !== idx && u.email.toLowerCase() === email.toLowerCase())) {
+        alert('A user with this email already exists!');
+        return;
+    }
+    
+    adminUsers[idx] = {
+        ...adminUsers[idx],
+        name,
+        email,
+        password: password || adminUsers[idx].password,  // Keep old password if not changed
+        phone: phone || 'N/A'
+    };
+    
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(adminUsers));
+    
+    closeUserModal();
+    alert('User updated successfully!');
+    renderUsersList();
+}
+
+function closeUserModal() {
+    document.getElementById('editUserModal').classList.remove('active');
+}
+
+function deleteUser(idx) {
+    const user = adminUsers[idx];
+    if (!confirm(`Are you sure you want to delete "${user.name}" (${user.email})? This action cannot be undone.`)) return;
+    
+    adminUsers.splice(idx, 1);
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(adminUsers));
+    
+    alert('User deleted successfully!');
+    renderUsersList();
+}
+
+// Export Data
+function exportData() {
+    const tickets = getTickets();
+    
+    if (tickets.length === 0) {
+        alert('No data to export');
+        return;
+    }
+    
+    const headers = ['Ticket ID', 'Movie', 'Genre', 'Theater', 'Showtime', 'Quantity', 'Price per Ticket', 'Total Revenue', 'Payment Method', 'Purchase Date'];
+    const rows = tickets.map(t => {
+        const price = t.price || moviePrices[t.movie] || 0;
+        const total = price * t.quantity;
+        return [
+            t.ticketId,
+            t.movie,
+            t.genre,
+            t.theater,
+            t.showtime,
+            t.quantity,
+            price.toFixed(2),
+            total.toFixed(2),
+            t.paymentMethod,
+            t.purchaseDate
+        ];
+    });
+    
+    let csvContent = headers.join(',') + '\n';
+    rows.forEach(row => {
+        csvContent += row.map(cell => `"${cell}"`).join(',') + '\n';
+    });
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ReelDeal_Cinema_Report_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    
+    alert('Report exported successfully!');
+}
+
+showSection('dashboard');
+</script>
+</body>
+</html>

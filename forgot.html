@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forgot Password - ReelDeal Cinema</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+* { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+body::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: 
+        radial-gradient(circle at 20% 50%, rgba(120,119,198,0.3) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(255,138,101,0.3) 0%, transparent 50%),
+        radial-gradient(circle at 40% 20%, rgba(74,144,226,0.3) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.forgot-card {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    max-width: 450px;
+    padding: 3rem;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    border-radius: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    animation: fadeIn 0.8s ease-in;
+}
+
+.forgot-card h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    text-align: center;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #4a90e2, #ff8a65);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.forgot-card p {
+    text-align: center;
+    margin-bottom: 2rem;
+    color: rgba(255,255,255,0.8);
+    font-size: 0.95rem;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    border-radius: 1rem;
+    border: none;
+    background: rgba(255,255,255,0.15);
+    color: white;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s;
+}
+
+input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+input:focus {
+    outline: none;
+    box-shadow: 0 0 15px #4a90e2;
+    border: 2px solid #4a90e2;
+}
+
+.btn-gradient {
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: 1rem;
+    background: linear-gradient(135deg, #4a90e2, #ff8a65);
+    border: none;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 8px 20px rgba(74,144,226,0.5);
+}
+
+.btn-gradient:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 15px 35px rgba(74,144,226,0.6);
+}
+
+.btn-gradient:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+#successMessage, #errorMessage {
+    border-radius: 1rem;
+    text-align: center;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    animation: slideIn 0.3s ease-out;
+}
+
+#successMessage { background: rgba(0,128,0,0.5); color: #b6f6b6; }
+#errorMessage { background: rgba(255,0,0,0.5); color: #ffb6b6; }
+
+.step-indicator {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+}
+
+.step {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.3);
+    transition: all 0.3s;
+}
+
+.step.active {
+    background: linear-gradient(135deg, #4a90e2, #ff8a65);
+    width: 30px;
+    border-radius: 10px;
+}
+
+.hidden { display: none !important; }
+
+footer {
+    text-align: center;
+    padding: 1rem;
+    color: #aaa;
+    font-size: 0.85rem;
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: white;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all 0.3s;
+    margin-bottom: 1.5rem;
+}
+
+.back-link:hover {
+    color: #4a90e2;
+    transform: translateX(-5px);
+}
+</style>
+</head>
+<body>
+
+<div class="forgot-card">
+    <a href="login.html" class="back-link">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        Back to Login
+    </a>
+
+    <h1>Reset Password</h1>
+    <p id="stepDescription">Enter your email address to reset your password</p>
+
+    <div class="step-indicator">
+        <div class="step active" id="step1"></div>
+        <div class="step" id="step2"></div>
+        <div class="step" id="step3"></div>
+    </div>
+
+    <div id="successMessage" class="hidden">Password reset successful! Redirecting...</div>
+    <div id="errorMessage" class="hidden"></div>
+
+    <!-- Step 1: Email Verification -->
+    <form id="emailForm" class="step-form">
+        <input type="email" id="email" placeholder="Enter your email address" required>
+        <button type="submit" class="btn-gradient">Continue</button>
+    </form>
+
+    <!-- Step 2: Verify User Info -->
+    <form id="verifyForm" class="step-form hidden">
+        <p class="text-sm text-white/80 mb-4">To confirm your identity, please enter your registered phone number:</p>
+        <input type="tel" id="phoneVerify" placeholder="Phone (555-123-4567)" maxlength="12" required>
+        <button type="submit" class="btn-gradient">Verify Identity</button>
+    </form>
+
+    <!-- Step 3: New Password -->
+    <form id="resetForm" class="step-form hidden">
+        <input type="password" id="newPassword" placeholder="New Password (min 6 chars)" required minlength="6">
+        <input type="password" id="confirmPassword" placeholder="Confirm New Password" required>
+        <button type="submit" class="btn-gradient">Reset Password</button>
+    </form>
+</div>
+
+<footer>
+    &copy; 2025 ReelDeal Cinema. All rights reserved.
+</footer>
+
+<script>
+let currentEmail = '';
+let currentUser = null;
+
+// --- AUTO-FORMAT PHONE NUMBER ---
+document.getElementById('phoneVerify').addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 10) value = value.slice(0, 10);
+    
+    let formattedValue = '';
+    if (value.length > 0) formattedValue = value.substring(0, 3);
+    if (value.length >= 4) formattedValue += '-' + value.substring(3, 6);
+    if (value.length >= 7) formattedValue += '-' + value.substring(6, 10);
+    
+    e.target.value = formattedValue;
+});
+
+// --- HASH PASSWORD ---
+function hashPassword(password) { 
+    return CryptoJS.SHA256(password).toString(); 
+}
+
+// --- SHOW ERROR ---
+function showError(msg) {
+    const errorBox = document.getElementById('errorMessage');
+    errorBox.textContent = msg;
+    errorBox.classList.remove('hidden');
+    document.getElementById('successMessage').classList.add('hidden');
+}
+
+// --- SHOW SUCCESS ---
+function showSuccess(msg) {
+    const successBox = document.getElementById('successMessage');
+    successBox.textContent = msg;
+    successBox.classList.remove('hidden');
+    document.getElementById('errorMessage').classList.add('hidden');
+}
+
+// --- UPDATE STEPS ---
+function goToStep(stepNum) {
+    // Update step indicators
+    for (let i = 1; i <= 3; i++) {
+        const step = document.getElementById(`step${i}`);
+        if (i <= stepNum) {
+            step.classList.add('active');
+        } else {
+            step.classList.remove('active');
+        }
+    }
+
+    // Hide all forms
+    document.querySelectorAll('.step-form').forEach(form => form.classList.add('hidden'));
+
+    // Show current form and update description
+    const descriptions = [
+        'Enter your email address to reset your password',
+        'Verify your identity to continue',
+        'Create a new secure password'
+    ];
+
+    document.getElementById('stepDescription').textContent = descriptions[stepNum - 1];
+
+    if (stepNum === 1) document.getElementById('emailForm').classList.remove('hidden');
+    if (stepNum === 2) document.getElementById('verifyForm').classList.remove('hidden');
+    if (stepNum === 3) document.getElementById('resetForm').classList.remove('hidden');
+}
+
+// --- STEP 1: EMAIL VERIFICATION ---
+document.getElementById('emailForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const email = document.getElementById('email').value.trim().toLowerCase();
+    currentEmail = email;
+
+    // Load all registered users
+    const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+    
+    // Find user by email
+    const user = registeredUsers.find(u => u.email.toLowerCase() === email);
+
+    if (!user) {
+        // Also check legacy storage format
+        const userId = localStorage.getItem(`user_email:${email}`);
+        if (userId) {
+            const userDataStr = localStorage.getItem(`user:${userId}`);
+            if (userDataStr) {
+                currentUser = JSON.parse(userDataStr);
+                goToStep(2);
+                document.getElementById('errorMessage').classList.add('hidden');
+                return;
+            }
+        }
+        
+        showError('No account found with this email address.');
+        return;
+    }
+
+    currentUser = user;
+    goToStep(2);
+    document.getElementById('errorMessage').classList.add('hidden');
+});
+
+// --- STEP 2: PHONE VERIFICATION ---
+document.getElementById('verifyForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const phone = document.getElementById('phoneVerify').value.trim();
+
+    if (!currentUser) {
+        showError('Session expired. Please start over.');
+        goToStep(1);
+        return;
+    }
+
+    if (phone !== currentUser.phone) {
+        showError('Phone number does not match our records.');
+        return;
+    }
+
+    goToStep(3);
+    document.getElementById('errorMessage').classList.add('hidden');
+});
+
+// --- STEP 3: PASSWORD RESET ---
+document.getElementById('resetForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+
+    if (newPassword !== confirmPassword) {
+        showError('Passwords do not match!');
+        return;
+    }
+
+    if (newPassword.length < 6) {
+        showError('Password must be at least 6 characters!');
+        return;
+    }
+
+    if (!currentUser) {
+        showError('Session expired. Please start over.');
+        goToStep(1);
+        return;
+    }
+
+    // Update password in both storage locations
+    currentUser.passwordHash = hashPassword(newPassword);
+
+    // Update in registeredUsers array
+    let registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+    const userIndex = registeredUsers.findIndex(u => u.email.toLowerCase() === currentEmail);
+    
+    if (userIndex !== -1) {
+        registeredUsers[userIndex].passwordHash = currentUser.passwordHash;
+        localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
+    }
+
+    // Update legacy storage if it exists
+    const userId = localStorage.getItem(`user_email:${currentEmail}`);
+    if (userId) {
+        localStorage.setItem(`user:${userId}`, JSON.stringify(currentUser));
+    }
+
+    // Success!
+    showSuccess('Password reset successful! Redirecting to login...');
+    
+    setTimeout(() => {
+        window.location.href = 'login.html';
+    }, 2000);
+});
+</script>
+
+</body>
+</html>
