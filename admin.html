@@ -174,7 +174,8 @@
     <h1 class="text-5xl font-black mb-2">🎬 ReelDeal Cinema - Admin Panel</h1>
     <p class="text-lg opacity-90">Comprehensive analytics and management</p>
     <div class="sync-notice mt-4">
-        ✅ All changes sync automatically with SQL database and home screen
+        ✅ All changes sync automatically with SQL database and home screen<br>
+        <span class="text-sm">🔒 Admin-only access: Only accounts with admin privileges can access this panel and create other admins</span>
     </div>
 </header>
 
@@ -1557,6 +1558,13 @@ function populatePromoteSelect() {
 }
 
 function promoteToAdmin() {
+    // Require admin authentication
+    try {
+        requireAdminAuth();
+    } catch (error) {
+        return;
+    }
+    
     const select = document.getElementById('promoteUserSelect');
     const userId = select.value;
     
@@ -1571,13 +1579,13 @@ function promoteToAdmin() {
         return;
     }
     
-    if (!confirm(`Are you sure you want to promote "${user.name}" to admin status?`)) return;
+    if (!confirm(`Are you sure you want to promote "${user.name}" to admin status?\n\n⚠️ Admins have full access to:\n• Create/manage other admins\n• Manage all users\n• Access all system data\n• Modify theaters and showtimes`)) return;
     
     // Update in SQL database
     const updated = updateUserInSQL(userId, { accountType: 'admin' });
     
     if (updated) {
-        alert(`${user.name} has been promoted to admin!`);
+        alert(`✅ ${user.name} has been promoted to admin!\n\nThey can now:\n• Access the admin panel\n• Create other admins\n• Manage users and system settings`);
         populatePromoteSelect();
         renderAdminsList();
     } else {
@@ -1586,6 +1594,13 @@ function promoteToAdmin() {
 }
 
 function addAdmin() {
+    // Require admin authentication
+    try {
+        requireAdminAuth();
+    } catch (error) {
+        return;
+    }
+    
     const name = document.getElementById('newAdminName').value.trim();
     const email = document.getElementById('newAdminEmail').value.trim().toLowerCase();
     const password = document.getElementById('newAdminPassword').value;
@@ -1635,7 +1650,7 @@ function addAdmin() {
         document.getElementById('newAdminPassword').value = '';
         document.getElementById('newAdminPhone').value = '';
         
-        alert('Admin account created successfully!');
+        alert(`✅ Admin account created successfully!\n\n👤 Name: ${name}\n📧 Email: ${email}\n👑 Role: Administrator\n\nThe new admin can now:\n• Log in using their credentials\n• Access the admin panel\n• Create other admins\n• Manage all users and settings`);
         renderAdminsList();
     } else {
         alert('Failed to create admin account. Please try again.');
@@ -1678,19 +1693,33 @@ function renderAdminsList() {
 }
 
 function demoteFromAdmin(userId) {
+    // Require admin authentication
+    try {
+        requireAdminAuth();
+    } catch (error) {
+        return;
+    }
+    
     const admin = getAdminUsers().find(u => u.userId === userId);
     if (!admin) {
         alert('Admin not found');
         return;
     }
     
-    if (!confirm(`Are you sure you want to demote "${admin.name}" from admin to regular user?`)) return;
+    // Prevent demoting yourself
+    const currentSession = JSON.parse(localStorage.getItem('currentUser'));
+    if (currentSession.userId === userId) {
+        alert('⚠️ You cannot demote yourself!\n\nIf you need to change your role, please ask another admin to do it.');
+        return;
+    }
+    
+    if (!confirm(`Are you sure you want to demote "${admin.name}" from admin to regular user?\n\n⚠️ They will lose access to:\n• Admin panel\n• User management\n• System settings`)) return;
     
     // Update in SQL database
     const updated = updateUserInSQL(userId, { accountType: 'user' });
     
     if (updated) {
-        alert(`${admin.name} has been demoted to regular user.`);
+        alert(`✅ ${admin.name} has been demoted to regular user.\n\nThey can still:\n• Log in to their account\n• Book movie tickets\n• View their profile`);
         populatePromoteSelect();
         renderAdminsList();
     } else {
@@ -1703,6 +1732,13 @@ function demoteFromAdmin(userId) {
 // =============================================
 
 function addUser() {
+    // Require admin authentication
+    try {
+        requireAdminAuth();
+    } catch (error) {
+        return;
+    }
+    
     const name = document.getElementById('newUserName').value.trim();
     const email = document.getElementById('newUserEmail').value.trim().toLowerCase();
     const password = document.getElementById('newUserPassword').value;
@@ -1752,7 +1788,7 @@ function addUser() {
         document.getElementById('newUserPassword').value = '';
         document.getElementById('newUserPhone').value = '';
         
-        alert('User added successfully!');
+        alert(`✅ User added successfully!\n\n👤 Name: ${name}\n📧 Email: ${email}\n🎫 Role: Regular User\n\nThe user can now:\n• Log in to book movie tickets\n• View their profile\n• Access the home screen`);
         renderUsersList();
     } else {
         alert('Failed to add user. Please try again.');
@@ -1796,6 +1832,13 @@ function renderUsersList() {
 }
 
 function editUser(userId) {
+    // Require admin authentication
+    try {
+        requireAdminAuth();
+    } catch (error) {
+        return;
+    }
+    
     const allUsers = getAllUsersFromSQL();
     const user = allUsers.find(u => u.userId === userId);
     
@@ -1815,6 +1858,13 @@ function editUser(userId) {
 }
 
 function saveUserEdit() {
+    // Require admin authentication
+    try {
+        requireAdminAuth();
+    } catch (error) {
+        return;
+    }
+    
     const userId = document.getElementById('editUserId').value;
     const name = document.getElementById('editUserName').value.trim();
     const email = document.getElementById('editUserEmail').value.trim().toLowerCase();
@@ -1858,7 +1908,7 @@ function saveUserEdit() {
     
     if (updated) {
         closeUserModal();
-        alert('User updated successfully!');
+        alert('✅ User updated successfully!');
         renderUsersList();
         renderAdminsList();
     } else {
@@ -1871,6 +1921,13 @@ function closeUserModal() {
 }
 
 function deleteUser(userId) {
+    // Require admin authentication
+    try {
+        requireAdminAuth();
+    } catch (error) {
+        return;
+    }
+    
     const allUsers = getAllUsersFromSQL();
     const user = allUsers.find(u => u.userId === userId);
     
@@ -1879,13 +1936,20 @@ function deleteUser(userId) {
         return;
     }
     
-    if (!confirm(`Are you sure you want to delete "${user.name}" (${user.email})? This action cannot be undone.`)) return;
+    // Prevent deleting yourself
+    const currentSession = JSON.parse(localStorage.getItem('currentUser'));
+    if (currentSession.userId === userId) {
+        alert('⚠️ You cannot delete your own account!\n\nIf you need to delete your account, please ask another admin to do it.');
+        return;
+    }
+    
+    if (!confirm(`Are you sure you want to delete "${user.name}" (${user.email})?\n\n⚠️ This action cannot be undone.\n\nAll user data will be permanently deleted including:\n• Account information\n• Purchase history\n• Reviews`)) return;
     
     // Delete from SQL database
     const deleted = deleteUserFromSQL(userId);
     
     if (deleted) {
-        alert('User deleted successfully!');
+        alert('✅ User deleted successfully!');
         renderUsersList();
         renderAdminsList();
     } else {
@@ -1938,8 +2002,92 @@ function exportData() {
     alert('Report exported successfully!');
 }
 
+// =============================================
+// AUTHENTICATION & ACCESS CONTROL
+// =============================================
+
+function checkAdminAccess() {
+    // Check if user is logged in
+    const sessionData = localStorage.getItem('currentUser');
+    
+    if (!sessionData) {
+        alert('⛔ Access Denied: Please log in to access the admin panel.');
+        window.location.href = 'login.html';
+        return false;
+    }
+    
+    try {
+        const currentUser = JSON.parse(sessionData);
+        
+        // Verify user is an admin
+        if (currentUser.accountType !== 'admin') {
+            alert('⛔ Access Denied: This area is restricted to administrators only.\n\nYou are logged in as a regular user and do not have permission to access the admin panel.');
+            window.location.href = 'Home_Screen.html';
+            return false;
+        }
+        
+        // Display admin info in header
+        displayAdminInfo(currentUser);
+        return true;
+        
+    } catch (error) {
+        console.error('Session validation error:', error);
+        alert('⛔ Session error. Please log in again.');
+        window.location.href = 'login.html';
+        return false;
+    }
+}
+
+function displayAdminInfo(adminUser) {
+    // Add admin info to the header
+    const header = document.querySelector('header');
+    const adminInfoDiv = document.createElement('div');
+    adminInfoDiv.className = 'mt-4 bg-purple-600 bg-opacity-30 backdrop-blur text-white px-4 py-2 rounded-xl inline-block';
+    adminInfoDiv.innerHTML = `
+        <span class="font-semibold">👑 Logged in as Admin:</span> 
+        <span class="font-bold">${adminUser.name}</span> 
+        <span class="opacity-75">(${adminUser.email})</span>
+    `;
+    header.appendChild(adminInfoDiv);
+}
+
+// Verify admin access throughout the session
+function verifyAdminSession() {
+    const sessionData = localStorage.getItem('currentUser');
+    if (!sessionData) {
+        alert('⛔ Your session has expired. Please log in again.');
+        window.location.href = 'login.html';
+        return false;
+    }
+    
+    try {
+        const currentUser = JSON.parse(sessionData);
+        if (currentUser.accountType !== 'admin') {
+            alert('⛔ Access Denied: Admin privileges required.');
+            window.location.href = 'Home_Screen.html';
+            return false;
+        }
+        return true;
+    } catch (error) {
+        window.location.href = 'login.html';
+        return false;
+    }
+}
+
+// Protect sensitive admin actions
+function requireAdminAuth() {
+    if (!verifyAdminSession()) {
+        throw new Error('Admin authentication required');
+    }
+}
+
 // Initialize database and show dashboard
 window.addEventListener('DOMContentLoaded', async function() {
+    // CRITICAL: Check admin access first
+    if (!checkAdminAccess()) {
+        return; // Exit if not authorized
+    }
+    
     const initialized = await initDatabase();
     if (initialized) {
         showSection('dashboard');
@@ -1947,6 +2095,11 @@ window.addEventListener('DOMContentLoaded', async function() {
         alert('Failed to initialize database. Please refresh the page.');
     }
 });
+
+// Check admin session periodically (every 30 seconds)
+setInterval(() => {
+    verifyAdminSession();
+}, 30000);
 </script>
 </body>
 </html>
